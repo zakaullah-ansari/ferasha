@@ -11,12 +11,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from apps.taxes.constants import resolve_regime  # noqa: E402
-from apps.taxes.services import (  # noqa: E402
+from apps.taxes.constants import resolve_regime
+from apps.taxes.services import (
     PlaceOfSupply,
     SupplyType,
-    TaxError,
     TaxableLine,
+    TaxError,
     calculate_gst,
     calculate_line_tax,
     resolve_gst_rate,
@@ -236,7 +236,7 @@ class TestOrderTotals:
         )
         assert b.cgst_total + b.sgst_total + b.igst_total == b.tax_total
         assert b.taxable_value + b.tax_total == b.grand_total
-        assert sum(l.total_tax for l in b.lines) == b.tax_total
+        assert sum(line.total_tax for line in b.lines) == b.tax_total
 
     def test_serialisation_is_json_safe(self):
         import json

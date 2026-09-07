@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
+    "drf_spectacular",
     "apps.common",
     "apps.users",
     "apps.catalog",
@@ -162,9 +163,42 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ),
-    "DEFAULT_THROTTLE_RATES": {"anon": "120/min", "user": "600/min"},
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "120/min",
+        "user": "600/min",
+        "login": "10/min",
+        # Endpoints that dispatch mail to a caller-supplied address.
+        "credential_email": "5/hour",
+    },
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
     "EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+EXPOSE_API_DOCS = env_bool("EXPOSE_API_DOCS", False)
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Ferasha API",
+    "DESCRIPTION": (
+        "Luxury South Asian womenswear and bespoke tailoring. "
+        "This schema is the single source of truth for the storefront's "
+        "generated TypeScript client."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/v1",
+    # Several models expose a field literally named "status". Without explicit
+    # names drf-spectacular emits hash-suffixed components (Status2b0Enum),
+    # which are unstable across builds and produce meaningless TypeScript type
+    # names in the generated client.
+    "ENUM_NAME_OVERRIDES": {
+        "ProductStatusEnum": "apps.catalog.enums.ProductStatus.choices",
+        "OrderStatusEnum": "apps.orders.models.OrderStatus.choices",
+        "ReviewStatusEnum": "apps.reviews.models.ReviewStatus.choices",
+        "ModerationStatusEnum": "apps.media_assets.models.ModerationStatus.choices",
+    },
+    "SORT_OPERATIONS": True,
 }
 
 SIMPLE_JWT = {
@@ -182,6 +216,33 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
     "TOKEN_OBTAIN_SERIALIZER": "apps.users.serializers.FerashaTokenObtainPairSerializer",
 }
+
+# --------------------------------------------------------------------------- #
+# Transactional email
+#
+# Development prints to the console so no real mail escapes a developer laptop.
+# Production must set EMAIL_HOST and friends; the deploy check in Phase 7 fails
+# the build if EMAIL_BACKEND is still the console backend when DEBUG is False.
+# --------------------------------------------------------------------------- #
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Ferasha <no-reply@ferasha.com>")
+SERVER_EMAIL = os.environ.get("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
+
+# Links in transactional email point at the storefront, not the API.
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
+EMAIL_VERIFICATION_PATH = os.environ.get("EMAIL_VERIFICATION_PATH", "/account/verify-email")
+PASSWORD_RESET_PATH = os.environ.get("PASSWORD_RESET_PATH", "/account/reset-password")
 
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 CORS_ALLOW_CREDENTIALS = True

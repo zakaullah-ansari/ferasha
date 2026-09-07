@@ -11,6 +11,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
+from django.db.models import ProtectedError
 
 from apps.media_assets.models import MediaAsset, ModerationStatus
 from tests.factories import make_vendor
@@ -186,5 +187,5 @@ class TestProductImageGuard:
         ProductImage.objects.create(
             product=make_product(), asset=asset, alt_text="Alt"
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ProtectedError):
             asset.delete()

@@ -20,7 +20,7 @@ as bare constants. ``resolve_regime(as_of)`` selects the correct one.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date
 from decimal import Decimal
 from types import MappingProxyType
 
@@ -136,9 +136,9 @@ CURRENT_REGIME = GST_REGIMES[-1]
 def resolve_regime(as_of: date | None = None) -> GSTRegime:
     """Return the GST regime in force on ``as_of`` (default: today)."""
     if as_of is None:
-        from datetime import datetime, timezone as _tz
+        from datetime import datetime
 
-        as_of = datetime.now(_tz.utc).date()
+        as_of = datetime.now(UTC).date()
     applicable = [r for r in GST_REGIMES if r.effective_from <= as_of]
     if not applicable:
         raise ValueError(

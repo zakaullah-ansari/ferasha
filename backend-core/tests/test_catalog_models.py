@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import pytest
 from django.db import IntegrityError, transaction
+from django.db.models import ProtectedError
 
 from apps.catalog.enums import ProductStatus, SizeStandard, SleeveCoverage, SlitCoverage
 from apps.catalog.models import Category, Product, ProductVariant
@@ -56,7 +57,7 @@ class TestCategoryTree:
     def test_parent_is_protected_from_deletion(self):
         root = make_category(slug="bridal")
         Category.objects.create(name="Lehenga", slug="lehenga", parent=root)
-        with pytest.raises(Exception):
+        with pytest.raises(ProtectedError):
             root.delete()
 
 

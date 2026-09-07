@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from rest_framework import serializers as drf_serializers
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -26,7 +28,22 @@ class TaxQuoteView(APIView):
     """
 
     permission_classes = (AllowAny,)
+    serializer_class = TaxQuoteRequestSerializer
 
+    @extend_schema(
+        summary="Quote GST for a basket",
+        description=(
+            "Stateless GST quotation for a prospective basket. Advisory only - the "
+            "authoritative breakdown is snapshotted onto the order at checkout and "
+            "is never recomputed afterwards."
+        ),
+        request=TaxQuoteRequestSerializer,
+        responses={
+            200: OpenApiResponse(description="Per-line and aggregate CGST/SGST/IGST breakdown."),
+            400: OpenApiResponse(description="Validation error."),
+        },
+        tags=["tax"],
+    )
     def post(self, request):
         serializer = TaxQuoteRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -37,7 +54,41 @@ class TaxRateReferenceView(APIView):
     """GET /api/v1/tax/reference/ - the rate card the engine applies."""
 
     permission_classes = (AllowAny,)
+    serializer_class = None
 
+    @extend_schema(
+        summary="Applicable GST rate card",
+        description=(
+            "The rate card the engine currently applies, including the apparel "
+            "value slab, flat-rated HSN codes and the regime history. Exposed so "
+            "the storefront and finance tooling cannot drift from the engine."
+        ),
+        responses={
+            200: inline_serializer(
+                name="TaxRateReference",
+                fields={
+                    "home_state_code": drf_serializers.CharField(),
+                    "home_country": drf_serializers.CharField(),
+                    "regime": drf_serializers.CharField(),
+                    "effective_from": drf_serializers.DateField(),
+                    "apparel_slab": drf_serializers.DictField(),
+                    "tailoring_service_rate": drf_serializers.CharField(),
+                    "courier_service_rate": drf_serializers.CharField(),
+                    "flat_rated_codes": drf_serializers.DictField(
+                        child=drf_serializers.CharField()
+                    ),
+                    "permitted_rates": drf_serializers.ListField(
+                        child=drf_serializers.CharField()
+                    ),
+                    "supported_states": drf_serializers.ListField(
+                        child=drf_serializers.CharField()
+                    ),
+                    "regime_history": drf_serializers.ListField(child=drf_serializers.DictField()),
+                },
+            )
+        },
+        tags=["tax"],
+    )
     def get(self, request):
         regime = resolve_regime()
         return Response(

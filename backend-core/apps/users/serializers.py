@@ -246,8 +246,123 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError({"new_password": list(exc.messages)}) from exc
         return attrs
 
+    @transaction.atomic
     def save(self, **kwargs: Any) -> Any:
         user = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
         user.save(update_fields=["password", "updated_at"])
+        # Rotating the password must not leave stolen refresh tokens usable.
+        revoke_all_refresh_tokens(user)
+        return user
+
+
+def revoke_all_refresh_tokens(user) -> int:
+    """Blacklist every outstanding refresh token for ``user``.
+
+    Called after any credential change. Access tokens already issued remain
+    valid until they expire (they are stateless by design), which is why the
+    access lifetime is kept short; refresh is the durable credential and it is
+    what an attacker would rely on for persistence.
+    """
+    from rest_framework_simplejwt.token_blacklist.models import (
+        BlacklistedToken,
+        OutstandingToken,
+    )
+
+    revoked = 0
+    for token in OutstandingToken.objects.filter(user=user):
+        _, created = BlacklistedToken.objects.get_or_create(token=token)
+        revoked += int(created)
+    return revoked
+
+
+class EmailVerificationRequestSerializer(serializers.Serializer):
+    """Request a fresh verification email.
+
+    Accepts an email so the flow works for a signed-out user who lost the
+    original message. The view's response is identical whether or not the
+    address exists.
+    """
+
+    email = serializers.EmailField()
+
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+
+
+class EmailVerificationConfirmSerializer(serializers.Serializer):
+    """Consume a verification token."""
+
+    token = serializers.CharField(write_only=True, max_length=512)
+
+    def validate_token(self, value: str) -> str:
+        from .tokens import TokenInvalid, read_email_verification_token
+
+        try:
+            self._user = read_email_verification_token(value, User)
+        except TokenInvalid as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        return value
+
+    @transaction.atomic
+    def save(self, **kwargs: Any) -> Any:
+        user = self._user
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=["email_verified_at", "updated_at"])
+        return user
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Begin a password reset. Never reveals whether the account exists."""
+
+    email = serializers.EmailField()
+
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Complete a password reset with a single-use token."""
+
+    token = serializers.CharField(write_only=True, max_length=512)
+    new_password = serializers.CharField(
+        write_only=True, style={"input_type": "password"}, min_length=10
+    )
+    new_password_confirm = serializers.CharField(write_only=True, style={"input_type": "password"})
+
+    def validate_token(self, value: str) -> str:
+        from .tokens import TokenInvalid, read_password_reset_token
+
+        try:
+            self._user = read_password_reset_token(value, User)
+        except TokenInvalid as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+        return value
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError(
+                {"new_password_confirm": _("Passwords do not match.")}
+            )
+        # ``_user`` is only present when the token validated; DRF still runs
+        # object-level validate() after a field error in some code paths.
+        user = getattr(self, "_user", None)
+        if user is not None:
+            try:
+                validate_password(attrs["new_password"], user)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError({"new_password": list(exc.messages)}) from exc
+        return attrs
+
+    @transaction.atomic
+    def save(self, **kwargs: Any) -> Any:
+        user = self._user
+        user.set_password(self.validated_data["new_password"])
+        # Completing a reset proves control of the mailbox, so the address is
+        # verified as a side effect. This also rotates the token fingerprint,
+        # which is what makes the reset link single-use.
+        if user.email_verified_at is None:
+            user.email_verified_at = timezone.now()
+        user.save(update_fields=["password", "email_verified_at", "updated_at"])
+        revoke_all_refresh_tokens(user)
         return user

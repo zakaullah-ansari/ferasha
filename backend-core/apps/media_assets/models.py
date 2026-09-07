@@ -49,12 +49,12 @@ class AssetKind(models.TextChoices):
     VENDOR_DOC = "vendor_doc", _("Vendor document")
 
 
-def private_upload_path(instance: "MediaAsset", filename: str) -> str:
+def private_upload_path(instance: MediaAsset, filename: str) -> str:
     """Originals live under a prefix that is never mapped to a public URL."""
     return f"private/originals/{instance.id}/{filename}"
 
 
-def public_upload_path(instance: "MediaAsset", filename: str) -> str:
+def public_upload_path(instance: MediaAsset, filename: str) -> str:
     return f"public/derivatives/{instance.id}/{filename}"
 
 

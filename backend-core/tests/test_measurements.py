@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from apps.tailoring.validators import (  # noqa: E402
+from apps.tailoring.validators import (
     MEASUREMENT_RANGES,
     REQUIRED_BY_GARMENT,
     MeasurementError,

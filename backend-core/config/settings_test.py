@@ -21,8 +21,8 @@ os.environ.setdefault(
 os.environ.setdefault("DATABASE_URL", "postgresql://ferasha:pw@127.0.0.1:5432/ferasha")
 os.environ.setdefault("DJANGO_DEBUG", "1")
 
-from .settings import *  # noqa: F403,E402
-from .settings import INSTALLED_APPS  # noqa: E402
+from .settings import *
+from .settings import INSTALLED_APPS
 
 USE_SQLITE_FOR_TESTS = os.environ.get("FERASHA_TEST_SQLITE", "1") == "1"
 

@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    inline_serializer,
+)
+from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -13,15 +20,26 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .emails import (
+    send_email_verification,
+    send_password_changed_notice,
+    send_password_reset,
+)
 from .models import Address
 from .permissions import IsOwnerOrBackOffice
 from .serializers import (
     AddressSerializer,
+    EmailVerificationConfirmSerializer,
+    EmailVerificationRequestSerializer,
     FerashaTokenObtainPairSerializer,
     PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     RegistrationSerializer,
     UserSerializer,
 )
+
+User = get_user_model()
 
 
 class LoginRateThrottle(AnonRateThrottle):
@@ -29,6 +47,18 @@ class LoginRateThrottle(AnonRateThrottle):
 
     scope = "login"
     rate = "10/min"
+
+
+class CredentialEmailThrottle(AnonRateThrottle):
+    """Bucket for endpoints that send mail to an arbitrary address.
+
+    Rate limited harder than login: an unthrottled endpoint here is both an
+    account-enumeration oracle (via timing) and a way to use Ferasha's sending
+    reputation to spam a third party.
+    """
+
+    scope = "credential_email"
+    rate = "5/hour"
 
 
 class FerashaTokenObtainPairView(TokenObtainPairView):
@@ -50,6 +80,7 @@ class RegistrationView(CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        send_email_verification(user)
 
         refresh = FerashaTokenObtainPairSerializer.get_token(user)
         return Response(
@@ -66,7 +97,24 @@ class LogoutView(APIView):
     """POST /api/v1/auth/logout/ - blacklist the supplied refresh token."""
 
     permission_classes = (IsAuthenticated,)
+    serializer_class = None
 
+    @extend_schema(
+        summary="Sign out",
+        description=(
+            "Blacklists the supplied refresh token. Idempotent: replaying an "
+            "already-blacklisted token still returns 205."
+        ),
+        request=inline_serializer(
+            name="LogoutRequest",
+            fields={"refresh": drf_serializers.CharField(help_text="The refresh token to revoke.")},
+        ),
+        responses={
+            205: OpenApiResponse(description="Session ended; client should discard both tokens."),
+            400: OpenApiResponse(description="No refresh token supplied."),
+        },
+        tags=["auth"],
+    )
     def post(self, request):
         token = request.data.get("refresh")
         if not token:
@@ -100,16 +148,34 @@ class PasswordChangeView(APIView):
     """POST /api/v1/auth/password/change/"""
 
     permission_classes = (IsAuthenticated,)
+    serializer_class = PasswordChangeSerializer
 
+    @extend_schema(
+        summary="Change password",
+        description=(
+            "Rotates the password of the authenticated user. All other refresh "
+            "tokens are revoked and an out-of-band notification email is sent."
+        ),
+        request=PasswordChangeSerializer,
+        responses={
+            200: inline_serializer(
+                name="PasswordChangeResponse",
+                fields={"detail": drf_serializers.CharField()},
+            ),
+            400: OpenApiResponse(description="Validation error."),
+        },
+        tags=["auth"],
+    )
     @transaction.atomic
     def post(self, request):
         serializer = PasswordChangeSerializer(
             data=request.data, context=self.get_serializer_context()
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        user = serializer.save()
+        send_password_changed_notice(user)
         return Response(
-            {"detail": "Password updated. Please sign in again on other devices."},
+            {"detail": "Password updated. All other sessions have been signed out."},
             status=status.HTTP_200_OK,
         )
 
@@ -135,3 +201,100 @@ class AddressViewSet(viewsets.ModelViewSet):
             requested = self.request.query_params.get("user")
             return queryset.filter(user_id=requested) if requested else queryset.filter(user=user)
         return queryset.filter(user=user)
+
+
+# --------------------------------------------------------------------------- #
+# Email verification and password reset
+#
+# Every endpoint below returns an identical response whether or not the address
+# corresponds to a real account. Anonymous callers must not be able to probe
+# membership - see the same rule in RegistrationSerializer.validate_email.
+# --------------------------------------------------------------------------- #
+
+_NEUTRAL_EMAIL_RESPONSE = {
+    "detail": "If that email address matches an account, a message is on its way.",
+}
+
+
+class EmailVerificationRequestView(APIView):
+    """POST /api/v1/auth/email/verify/request/ - (re)send a verification link."""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (CredentialEmailThrottle,)
+    serializer_class = EmailVerificationRequestSerializer
+
+    def post(self, request):
+        serializer = EmailVerificationRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = User.objects.filter(
+            email__iexact=serializer.validated_data["email"], is_active=True
+        ).first()
+        # Silently skip already-verified accounts: re-sending would let a
+        # caller distinguish verified from unverified addresses.
+        if user is not None and not user.email_is_verified:
+            send_email_verification(user)
+        return Response(_NEUTRAL_EMAIL_RESPONSE, status=status.HTTP_202_ACCEPTED)
+
+
+class EmailVerificationConfirmView(APIView):
+    """POST /api/v1/auth/email/verify/confirm/ - consume a verification token."""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (LoginRateThrottle,)
+    serializer_class = EmailVerificationConfirmSerializer
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = EmailVerificationConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            {
+                "detail": "Email address confirmed.",
+                "user": UserSerializer(user, context={"request": request}).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetRequestView(APIView):
+    """POST /api/v1/auth/password/reset/request/"""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (CredentialEmailThrottle,)
+    serializer_class = PasswordResetRequestSerializer
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = User.objects.filter(
+            email__iexact=serializer.validated_data["email"], is_active=True
+        ).first()
+        if user is not None:
+            send_password_reset(user)
+        return Response(_NEUTRAL_EMAIL_RESPONSE, status=status.HTTP_202_ACCEPTED)
+
+
+class PasswordResetConfirmView(APIView):
+    """POST /api/v1/auth/password/reset/confirm/
+
+    On success every refresh token is revoked: a reset is the remedy for a
+    suspected compromise, so any session the attacker holds must die with it.
+    """
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (LoginRateThrottle,)
+    serializer_class = PasswordResetConfirmSerializer
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        send_password_changed_notice(user)
+        return Response(
+            {"detail": "Password reset. Please sign in with your new password."},
+            status=status.HTTP_200_OK,
+        )

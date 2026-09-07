@@ -1,0 +1,43 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "F",     # pyflakes
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "I",     # import sorting
+    "UP",    # pyupgrade
+    "B",     # bugbear
+    "C4",    # comprehensions
+    "SIM",   # simplify
+    "RUF",
+    "FURB",
+    "DJ",    # flake8-django
+    "S",     # bandit
+]
+ignore = [
+    # Django and DRF express configuration as mutable class attributes
+    # (Meta.fields, permission_classes, filterset_fields). RUF012 would have us
+    # annotate every one of them ClassVar, which is noise against framework
+    # convention.
+    "RUF012",
+    # Decimal("0.05") is the correct, explicit spelling for money and tax
+    # rates. FURB157 wants Decimal(5) / literals, which is exactly the
+    # float-adjacent shorthand we are avoiding in the GST engine.
+    "FURB157",
+    # Nested `with` is clearer than a combined context manager when each block
+    # asserts a distinct condition in tests.
+    "SIM117",
+    "E501",  # line length is enforced by the formatter, not the linter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests legitimately use assert, hardcoded passwords, and fixture shadowing.
+"tests/*" = ["S101", "S105", "S106", "S311", "C408"]
+"config/settings*.py" = ["F403", "F405"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]

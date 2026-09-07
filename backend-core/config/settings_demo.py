@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 
-from .settings_test import *  # noqa: F403
+from .settings_test import *
 
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
@@ -17,7 +17,7 @@ ALLOWED_HOSTS = ["*"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.environ.get("DEMO_DB_PATH", "/tmp/ferasha_demo.sqlite3"),
+        "NAME": os.environ.get("DEMO_DB_PATH", "/tmp/ferasha_demo.sqlite3"),  # noqa: S108 - throwaway demo DB, never production
     }
 }
 

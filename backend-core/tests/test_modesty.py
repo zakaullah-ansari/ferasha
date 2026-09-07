@@ -14,13 +14,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from apps.catalog.enums import (  # noqa: E402
+from apps.catalog.enums import (
     BackCoverage,
     NecklineModesty,
     SleeveCoverage,
     SlitCoverage,
 )
-from apps.catalog.modesty import (  # noqa: E402
+from apps.catalog.modesty import (
     ModestyAdvisory,
     ModestyBadge,
     ModestyProfile,

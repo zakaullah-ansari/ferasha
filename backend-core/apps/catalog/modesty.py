@@ -13,7 +13,7 @@ unit tested against a truth table without touching the ORM.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from .enums import (
     BACK_ORDER,
@@ -28,7 +28,7 @@ from .enums import (
 )
 
 
-class ModestyBadge(str, Enum):
+class ModestyBadge(StrEnum):
     """Badges surfaced on product cards and detail pages."""
 
     FULLY_LINED = "fully_lined"
@@ -40,7 +40,7 @@ class ModestyBadge(str, Enum):
     NO_SLIT = "no_slit"
 
 
-class ModestyAdvisory(str, Enum):
+class ModestyAdvisory(StrEnum):
     """Honest disclosures. Shown alongside badges, never suppressed.
 
     A luxury modest-wear brand earns trust by disclosing what a garment is not,
@@ -200,5 +200,5 @@ def derive_modesty(profile: ModestyProfile) -> ModestyAssessment:
     return ModestyAssessment(
         badges=tuple(badges),
         advisories=tuple(advisories),
-        coverage_score=int(round(max(0.0, min(100.0, weighted)))),
+        coverage_score=round(max(0.0, min(100.0, weighted))),
     )

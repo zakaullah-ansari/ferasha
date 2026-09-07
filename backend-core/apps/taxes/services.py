@@ -23,18 +23,18 @@ Rate resolution
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import date
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from enum import Enum
-from typing import Iterable, Sequence
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+from enum import StrEnum
 
 from .constants import (
-    GSTRegime,
     INDIAN_STATE_GST_CODES,
     SAC_COURIER_SERVICE,
     VALUE_SLABBED_HSN,
     ZERO_RATE,
+    GSTRegime,
     resolve_regime,
 )
 
@@ -49,7 +49,7 @@ class TaxError(ValueError):
     """Raised when a supply cannot be taxed deterministically."""
 
 
-class SupplyType(str, Enum):
+class SupplyType(StrEnum):
     INTRA_STATE = "intra_state"
     INTER_STATE = "inter_state"
     EXPORT = "export"
