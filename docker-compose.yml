@@ -1,0 +1,138 @@
+name: ferasha
+
+x-postgres-env: &postgres-env
+  POSTGRES_DB: ${POSTGRES_DB:-ferasha}
+  POSTGRES_USER: ${POSTGRES_USER:-ferasha}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ferasha_dev_password}
+
+x-django-env: &django-env
+  DJANGO_SETTINGS_MODULE: config.settings
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-insecure-dev-key-change-me}
+  DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+  DATABASE_URL: postgresql://${POSTGRES_USER:-ferasha}:${POSTGRES_PASSWORD:-ferasha_dev_password}@postgres:5432/${POSTGRES_DB:-ferasha}
+  REDIS_URL: redis://redis:6379/0
+  JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-jwt-key-change-me}
+  AI_ENGINE_URL: http://ai-engine:8001
+  AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment: *postgres-env
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ferasha} -d ${POSTGRES_DB:-ferasha}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend-core:
+    build:
+      context: ./backend-core
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment: *django-env
+    volumes:
+      - ./backend-core:/app
+      - media-data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-jwt-key-change-me}
+      BACKEND_CORE_URL: http://backend-core:8000
+      AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./ai-engine:/app
+      - media-data:/data/media
+    ports:
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+
+  ai-worker:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      BACKEND_CORE_URL: http://backend-core:8000
+      AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
+    volumes:
+      - ./ai-engine:/app
+      - media-data:/data/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "app.worker"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      BACKEND_CORE_URL: http://backend-core:8000
+      AI_ENGINE_URL: http://ai-engine:8001
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-core
+    command: ["npm", "run", "dev"]
+
+volumes:
+  postgres-data:
+  redis-data:
+  media-data:

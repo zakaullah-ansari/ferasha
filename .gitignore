@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+
+# Django
+staticfiles/
+media/
+*.sqlite3
+local_settings.py
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# AI engine model caches
+ai-engine/.models/
+*.tflite
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
