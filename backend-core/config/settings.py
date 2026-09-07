@@ -36,6 +36,15 @@ ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 # Shared HS256 key: Django mints tokens, the FastAPI ai-engine verifies them.
 JWT_SIGNING_KEY = env("JWT_SIGNING_KEY", SECRET_KEY)
+
+# RFC 7518 s.3.2 requires an HMAC key at least as long as the hash output.
+# A short key silently weakens every token the ai-engine trusts, so refuse to
+# boot rather than emit a runtime warning nobody reads.
+if not DEBUG and len(JWT_SIGNING_KEY.encode("utf-8")) < 32:
+    raise RuntimeError(
+        "JWT_SIGNING_KEY must be at least 32 bytes for HS256 (RFC 7518 s.3.2). "
+        "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    )
 AI_ENGINE_URL = env("AI_ENGINE_URL", "http://localhost:8001")
 AI_ENGINE_SHARED_SECRET = env("AI_ENGINE_SHARED_SECRET", "insecure-shared-secret")
 
