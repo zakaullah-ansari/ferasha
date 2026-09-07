@@ -61,11 +61,14 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
+    "apps.common",
     "apps.users",
     "apps.catalog",
     "apps.tailoring",
     "apps.taxes",
     "apps.media_assets",
+    "apps.orders",
+    "apps.reviews",
 ]
 
 MIDDLEWARE = [
