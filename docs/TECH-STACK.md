@@ -50,6 +50,12 @@ Rejected: running CV inside Django (blocks workers), and a GPU inference server 
 
 **Tailwind** for design tokens as a typed system and no dead CSS. **Framer Motion**, used with restraint — luxury reads as calm.
 
+> The UI library layering (Radix / shadcn / motion / effects), the licence audit
+> of Magic UI and React Bits, and the theming rules that stop shadcn/ui looking
+> like shadcn/ui are specified in **[DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)**
+> (decisions D8–D17). Note in particular that React Bits is **MIT + Commons
+> Clause**, not MIT, and is quarantined accordingly.
+
 ---
 
 ## 5. Database — PostgreSQL 16

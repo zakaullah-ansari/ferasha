@@ -27,7 +27,7 @@ Each phase has a detailed specification in [`docs/phases/`](./phases/).
 | 11 | Production Readiness & Compliance | ⬜ | 32–40 h | [PHASE-11](./phases/PHASE-11-PRODUCTION.md) |
 | 12 | Migration, Launch & Post-Launch | ⬜ | 20–26 h | [PHASE-12](./phases/PHASE-12-LAUNCH.md) |
 
-Supporting: [Tech stack decisions](./TECH-STACK.md)
+Supporting: [Tech stack decisions](./TECH-STACK.md) · [Design system & UI libraries](./DESIGN-SYSTEM.md)
 
 ---
 
@@ -89,6 +89,7 @@ These are considered judgements, not oversights. Each is argued in the linked ph
 | D5 | Payments | Razorpay primary, behind a `PaymentGateway` port. |
 | D6 | Money | `Decimal` only, 2dp, `ROUND_HALF_UP`. Floats banned in the money path. |
 | D7 | Tax on invoices | Snapshotted at checkout, never recomputed on read. |
+| D8–D17 | Design system & UI libraries | Radix/shadcn layering, React Bits Commons Clause quarantine, light-first aesthetic. See [DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md). |
 
 ---
 
