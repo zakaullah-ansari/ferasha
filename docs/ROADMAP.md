@@ -15,7 +15,7 @@ Each phase has a detailed specification in [`docs/phases/`](./phases/).
 |---|---|---|---|---|
 | 0 | Foundation, Environment & Tax Engine | ✅ **Complete** | ~35 h | [PHASE-00](./phases/PHASE-00-FOUNDATION.md) |
 | 1 | Domain Models & Data Integrity | ✅ **Complete** | ~32 h | [PHASE-01](./phases/PHASE-01-DOMAIN-MODELS.md) |
-| 2 | API Surface & Auth Hardening | ⬜ | 28–34 h | [PHASE-02](./phases/PHASE-02-API-AUTH.md) |
+| 2 | API Surface & Auth Hardening | ✅ **Complete** | ~30 h | [PHASE-02](./phases/PHASE-02-API-AUTH.md) |
 | 3 | AI Engine: Face-Blur Privacy Pipeline | ⬜ | 24–30 h | [PHASE-03](./phases/PHASE-03-AI-PRIVACY.md) |
 | 4 | Frontend Foundation & Design System | ⬜ | 34–42 h | [PHASE-04](./phases/PHASE-04-FRONTEND.md) |
 | 5 | Commerce: Cart, Checkout, Payments | ⬜ | 40–48 h | [PHASE-05](./phases/PHASE-05-COMMERCE.md) |

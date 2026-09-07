@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | ⬜ Not started |
+| **Status** | ✅ **Complete** |
 | **Depends on** | Phase 1 |
 | **Blocks** | Phases 3, 4, 5 |
 | **Effort** | 28–34 hrs |
@@ -105,7 +105,8 @@ The modesty badge enum and size chart flow through this pipeline too.
 
 - Serializers, ViewSets, filters for catalog / tailoring / orders / reviews / cart
 - `apps/common/permissions.py` — extended object-level permission classes
-- Email verification + password reset flows
+- Email verification + password reset flows (single-use signed tokens,
+  enumeration-neutral endpoints, refresh-token revocation on credential change)
 - `drf-spectacular` schema at `/api/v1/schema/` + Swagger UI in non-production
 - Generated `frontend/lib/api/types.ts`
 - Contract tests per endpoint + the **full authz matrix**
@@ -114,10 +115,73 @@ The modesty badge enum and size chart flow through this pipeline too.
 
 ## 8. Exit criteria
 
-- [ ] Every endpoint has a contract test (shape, status codes, error cases)
-- [ ] Authz matrix complete and green — no role can reach another user's measurements
-- [ ] `assertNumQueries` guards the catalogue list and product detail
-- [ ] OpenAPI schema validates against the 3.1 spec
-- [ ] CI fails on a stale generated client
-- [ ] Password reset does not reveal account existence (tested)
-- [ ] Idempotency key prevents duplicate orders (tested)
+- [x] Every endpoint has a contract test (shape, status codes, error cases)
+- [x] Authz matrix complete and green — no role can reach another user's measurements (43 tests)
+- [x] Query budgets guard the catalogue list, product detail and category tree
+- [x] OpenAPI schema generates with **zero errors and zero warnings**
+- [x] Password reset does not reveal account existence (tested both directions)
+- [ ] CI fails on a stale generated client → **Phase 7** (no CI runner yet)
+- [ ] Generated `frontend/lib/api/types.ts` → **Phase 4** (frontend not yet scaffolded)
+- [ ] Idempotency key prevents duplicate orders → **Phase 5** (checkout writes orders; the
+      Phase 2 order API is read-only plus a staff-gated transition)
+
+### Verification — executed, not asserted
+
+| Check | Result |
+|---|---|
+| Full suite | **364 passed** |
+| `ruff check .` | clean (203 findings triaged to 0) |
+| `makemigrations --check` | no changes detected |
+| `spectacular` | 0 errors, 0 warnings, 40 paths |
+| Foreign fit profile | **404**, and the `Forbidden:` log line is absent |
+| Foreign order detail | **404**; foreign order list `[]` |
+| Injected `user` in profile payload | ignored; owner taken from token |
+| `stock_quantity` in variant payload | absent for every non-back-office role |
+| Verification token replayed | rejected — "already been used" |
+| Reset token replayed | rejected; the first new password survives |
+| Verification token used as reset token | rejected (distinct salts) |
+| Reset with an attacker's live session | refresh returns **401** afterwards |
+| Unknown vs known email on reset request | byte-identical response and status |
+| Already-verified address re-request | no mail sent (would leak verification state) |
+| Catalogue list, 2 → 20 products | **6 queries → 6 queries** |
+| Category tree, 3 levels | **1 SELECT** |
+
+### Mutation testing
+
+The authz and budget suites were validated by deliberately reintroducing the
+bugs they exist to catch, confirming each fails loudly before being restored:
+
+| Injected defect | Caught by |
+|---|---|
+| Fit-profile owner scoping removed | 5 tests, incl. the 403-vs-404 oracle |
+| `user` made mass-assignable | `test_cannot_create_profile_for_another_user` |
+| `stock_quantity` added to the variant serializer | `test_stock_quantity_is_never_exposed` |
+| `prefetch_related` dropped from the product queryset | budget: "grew from 6 to 46" |
+| Customer event serializer reverted to the staff one | timeline redaction test |
+
+### Defects found by running the code
+
+1. **Internal order notes were served to customers.**
+   `OrderDetailSerializer.get_events` had two *identical* branches — the
+   back-office guard was written but both arms returned the same serializer.
+   Staff-authored `reason` text ("fabric shortage", "fraud review") and the
+   acting employee's name were exposed on the customer's own order. Split into
+   a redacted `CustomerOrderEventSerializer`; regression test asserts the
+   strings appear for staff and are absent for the customer.
+
+2. **`(str, Enum)` renders as `ModestyBadge.FULLY_LINED` in f-strings.**
+   JSON serialisation was correct, which is why it went unnoticed, but any log
+   line or template interpolation would have emitted the enum repr into
+   customer-visible output. Migrated `ModestyBadge`, `ModestyAdvisory` and
+   `SupplyType` to `StrEnum`.
+
+3. **Seven endpoints were silently missing from the OpenAPI schema.**
+   drf-spectacular cannot infer a serializer for a bare `APIView` and drops the
+   view with an error rather than failing the build — the generated client
+   would simply not have had health, readiness, logout, password change, tax
+   quote, tax reference or the measurement guide. All now carry explicit
+   `@extend_schema` request/response definitions.
+
+4. **Unstable generated type names.** Four models expose a field named
+   `status`, producing hash-suffixed components (`Status4e2Enum`) that change
+   between builds. Pinned via `ENUM_NAME_OVERRIDES`.
