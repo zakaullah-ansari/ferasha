@@ -13,8 +13,11 @@ from __future__ import annotations
 
 import os
 
-os.environ.setdefault("DJANGO_SECRET_KEY", "insecure-test-key")
-os.environ.setdefault("JWT_SIGNING_KEY", "insecure-test-jwt-key")
+os.environ.setdefault("DJANGO_SECRET_KEY", "insecure-test-key-not-for-production-use")
+# Must be >= 32 bytes to satisfy the RFC 7518 guard in config.settings.
+os.environ.setdefault(
+    "JWT_SIGNING_KEY", "insecure-test-jwt-signing-key-at-least-32-bytes-long"
+)
 os.environ.setdefault("DATABASE_URL", "postgresql://ferasha:pw@127.0.0.1:5432/ferasha")
 os.environ.setdefault("DJANGO_DEBUG", "1")
 

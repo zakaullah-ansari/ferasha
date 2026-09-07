@@ -24,19 +24,18 @@ Rate resolution
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
+from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from enum import Enum
 from typing import Iterable, Sequence
 
 from .constants import (
-    APPAREL_RATE_ABOVE_THRESHOLD,
-    APPAREL_RATE_BELOW_THRESHOLD,
-    APPAREL_SLAB_THRESHOLD,
-    FLAT_RATE_HSN,
+    GSTRegime,
     INDIAN_STATE_GST_CODES,
-    PERMITTED_GST_RATES,
+    SAC_COURIER_SERVICE,
     VALUE_SLABBED_HSN,
     ZERO_RATE,
+    resolve_regime,
 )
 
 TWO_PLACES = Decimal("0.01")
@@ -123,6 +122,8 @@ class TaxableLine:
     rate_override: Decimal | None = None
     #: True when unit_price already contains GST (MRP-inclusive pricing).
     price_is_tax_inclusive: bool = False
+    #: Date the supply is made. Selects the GST regime; defaults to today.
+    as_of: date | None = None
 
     def __post_init__(self) -> None:
         if self.quantity < 1:
@@ -145,12 +146,18 @@ class TaxableLine:
         object.__setattr__(self, "hsn_code", self.hsn_code.strip())
         if self.rate_override is not None:
             override = Decimal(self.rate_override)
-            if override not in PERMITTED_GST_RATES:
+            permitted = resolve_regime(self.as_of).permitted_rates
+            if override not in permitted:
                 raise TaxError(
                     f"Line {self.sku!r}: rate_override {override} is not a lawful GST rate "
-                    f"({sorted(PERMITTED_GST_RATES)})."
+                    f"under the regime in force ({sorted(permitted)})."
                 )
             object.__setattr__(self, "rate_override", override)
+
+    @property
+    def regime(self) -> GSTRegime:
+        """The GST regime governing this line."""
+        return resolve_regime(self.as_of)
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,6 +216,7 @@ class TaxBreakdown:
     tax_total: Decimal
     grand_total: Decimal
     is_zero_rated_export: bool
+    regime_name: str = ""
     rate_summary: tuple[tuple[Decimal, Decimal, Decimal], ...] = field(default=())
     notes: tuple[str, ...] = field(default=())
 
@@ -228,6 +236,7 @@ class TaxBreakdown:
             "tax_total": str(self.tax_total),
             "grand_total": str(self.grand_total),
             "is_zero_rated_export": self.is_zero_rated_export,
+            "regime": self.regime_name,
             "rate_summary": [
                 {"rate": str(rate), "taxable_value": str(taxable), "tax": str(tax)}
                 for rate, taxable, tax in self.rate_summary
@@ -245,21 +254,25 @@ def resolve_gst_rate(line: TaxableLine) -> tuple[Decimal, str]:
     if line.rate_override is not None:
         return line.rate_override, "override"
 
+    regime = line.regime
     hsn = line.hsn_code
-    if hsn in FLAT_RATE_HSN:
-        return FLAT_RATE_HSN[hsn], f"flat:{hsn}"
+    flat = regime.flat_rate_codes()
+    if hsn in flat:
+        return flat[hsn], f"flat:{hsn}"
 
     # Match on the 4-digit chapter heading so 6204.42.00 resolves like 6204.
     heading = hsn.replace(".", "")[:4]
     if heading in VALUE_SLABBED_HSN:
         per_piece = _per_piece_taxable_value(line)
-        if per_piece <= APPAREL_SLAB_THRESHOLD:
-            return APPAREL_RATE_BELOW_THRESHOLD, f"slab:{heading}:<=1000"
-        return APPAREL_RATE_ABOVE_THRESHOLD, f"slab:{heading}:>1000"
+        threshold = regime.apparel_threshold
+        if per_piece <= threshold:
+            return regime.apparel_rate_at_or_below, f"slab:{heading}:<={threshold:.0f}"
+        return regime.apparel_rate_above, f"slab:{heading}:>{threshold:.0f}"
 
     raise TaxError(
-        f"Line {line.sku!r}: no GST rate could be resolved for HSN/SAC {hsn!r}. "
-        "Register the code in apps.taxes.constants or set an explicit rate_override."
+        f"Line {line.sku!r}: no GST rate could be resolved for HSN/SAC {hsn!r} "
+        f"under {regime.name}. Register the code in apps.taxes.constants or set "
+        "an explicit rate_override."
     )
 
 
@@ -270,17 +283,18 @@ def _per_piece_taxable_value(line: TaxableLine) -> Decimal:
     The slab itself depends on that net value, so we test the higher slab first
     and fall back - this converges because the two candidate rates are ordered.
     """
+    regime = line.regime
     net = (line.unit_price * line.quantity) - line.discount
     per_piece = money(net / line.quantity)
     if not line.price_is_tax_inclusive:
         return per_piece
 
-    for rate in (APPAREL_RATE_ABOVE_THRESHOLD, APPAREL_RATE_BELOW_THRESHOLD):
+    for rate in (regime.apparel_rate_above, regime.apparel_rate_at_or_below):
         candidate = money(per_piece * HUNDRED / (HUNDRED + rate))
-        above = candidate > APPAREL_SLAB_THRESHOLD
-        if above == (rate == APPAREL_RATE_ABOVE_THRESHOLD):
+        above = candidate > regime.apparel_threshold
+        if above == (rate == regime.apparel_rate_above):
             return candidate
-    return money(per_piece * HUNDRED / (HUNDRED + APPAREL_RATE_BELOW_THRESHOLD))
+    return money(per_piece * HUNDRED / (HUNDRED + regime.apparel_rate_at_or_below))
 
 
 def _taxable_value(line: TaxableLine, rate: Decimal) -> Decimal:
@@ -349,16 +363,26 @@ def calculate_gst(
     place_of_supply: PlaceOfSupply,
     *,
     shipping_charge: Decimal | str | int = Decimal("0.00"),
+    as_of: date | None = None,
 ) -> TaxBreakdown:
     """Calculate the full GST breakdown for an order.
 
     ``shipping_charge`` is treated as part of a composite supply and is taxed at
     the highest rate present among the goods lines, per CGST Act s.8(a). If the
-    order has no taxable goods the shipping charge is taxed at 18%.
+    order has no taxable goods the shipping charge falls back to the standard
+    courier rate for the regime.
+
+    ``as_of`` selects the GST regime and is propagated to every line that does
+    not already carry its own date. Persist it on the order so a credit note
+    raised years later reproduces the original rates exactly.
     """
-    lines = tuple(lines)
+    lines = tuple(
+        line if line.as_of is not None else replace(line, as_of=as_of) for line in lines
+    )
     if not lines:
         raise TaxError("At least one taxable line is required.")
+
+    regime = resolve_regime(as_of)
 
     computed = [calculate_line_tax(line, place_of_supply) for line in lines]
 
@@ -368,17 +392,20 @@ def calculate_gst(
 
     notes: list[str] = []
     if shipping > 0:
-        principal_rate = max((c.gst_rate for c in computed), default=Decimal("18"))
+        principal_rate = max(
+            (c.gst_rate for c in computed), default=regime.courier_service_rate
+        )
+        if principal_rate not in regime.permitted_rates:  # pragma: no cover - defensive
+            principal_rate = regime.courier_service_rate
         shipping_line = TaxableLine(
             sku="SHIPPING",
-            hsn_code="996812",
+            hsn_code=SAC_COURIER_SERVICE,
             unit_price=shipping,
             quantity=1,
             description="Delivery charges (composite supply)",
-            rate_override=principal_rate if principal_rate in PERMITTED_GST_RATES else None,
+            rate_override=principal_rate,
+            as_of=as_of,
         )
-        if shipping_line.rate_override is None:  # pragma: no cover - defensive
-            shipping_line = replace(shipping_line, rate_override=Decimal("18"))
         computed.append(calculate_line_tax(shipping_line, place_of_supply))
         notes.append(
             "Delivery charge taxed at the principal supply rate as a composite supply."
@@ -425,6 +452,7 @@ def calculate_gst(
         tax_total=tax_total,
         grand_total=money(taxable_value + tax_total),
         is_zero_rated_export=supply_type is SupplyType.EXPORT,
+        regime_name=regime.name,
         rate_summary=rate_summary,
         notes=tuple(notes),
     )

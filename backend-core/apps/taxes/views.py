@@ -8,13 +8,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .constants import (
-    APPAREL_RATE_ABOVE_THRESHOLD,
-    APPAREL_RATE_BELOW_THRESHOLD,
-    APPAREL_SLAB_THRESHOLD,
-    FLAT_RATE_HSN,
+    GST_REGIMES,
     INDIAN_STATE_GST_CODES,
-    SERVICE_RATE_STANDARD,
     VALUE_SLABBED_HSN,
+    resolve_regime,
 )
 from .serializers import TaxQuoteRequestSerializer
 
@@ -42,19 +39,28 @@ class TaxRateReferenceView(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request):
+        regime = resolve_regime()
         return Response(
             {
                 "home_state_code": "MH",
                 "home_country": "IN",
+                "regime": regime.name,
+                "effective_from": regime.effective_from.isoformat(),
                 "apparel_slab": {
-                    "threshold_per_piece": str(APPAREL_SLAB_THRESHOLD),
-                    "rate_at_or_below": str(APPAREL_RATE_BELOW_THRESHOLD),
-                    "rate_above": str(APPAREL_RATE_ABOVE_THRESHOLD),
+                    "threshold_per_piece": str(regime.apparel_threshold),
+                    "rate_at_or_below": str(regime.apparel_rate_at_or_below),
+                    "rate_above": str(regime.apparel_rate_above),
                     "applies_to_hsn": sorted(VALUE_SLABBED_HSN),
                 },
-                "service_rate": str(SERVICE_RATE_STANDARD),
-                "flat_rated_codes": {k: str(v) for k, v in FLAT_RATE_HSN.items()},
+                "tailoring_service_rate": str(regime.tailoring_service_rate),
+                "courier_service_rate": str(regime.courier_service_rate),
+                "flat_rated_codes": {k: str(v) for k, v in regime.flat_rate_codes().items()},
+                "permitted_rates": sorted(str(r) for r in regime.permitted_rates),
                 "supported_states": sorted(INDIAN_STATE_GST_CODES),
+                "regime_history": [
+                    {"name": r.name, "effective_from": r.effective_from.isoformat()}
+                    for r in GST_REGIMES
+                ],
             },
             status=status.HTTP_200_OK,
         )
