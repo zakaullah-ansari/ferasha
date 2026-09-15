@@ -12,7 +12,7 @@ x-django-env: &django-env
   DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
   DATABASE_URL: postgresql://${POSTGRES_USER:-ferasha}:${POSTGRES_PASSWORD:-ferasha_dev_password}@postgres:5432/${POSTGRES_DB:-ferasha}
   REDIS_URL: redis://redis:6379/0
-  JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-jwt-key-change-me}
+  JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-dev-jwt-signing-key-change-me-in-production}
   AI_ENGINE_URL: http://ai-engine:8001
   AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
@@ -80,8 +80,8 @@ services:
     restart: unless-stopped
     environment:
       REDIS_URL: redis://redis:6379/0
-      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-jwt-key-change-me}
-      BACKEND_CORE_URL: http://backend-core:8000
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-dev-jwt-signing-key-change-me-in-production}
+      BACKEND_BASE_URL: http://backend-core:8000
       AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -102,13 +102,19 @@ services:
     restart: unless-stopped
     environment:
       REDIS_URL: redis://redis:6379/0
-      BACKEND_CORE_URL: http://backend-core:8000
+      BACKEND_BASE_URL: http://backend-core:8000
+      # Required by Settings validation even though the worker never verifies
+      # a JWT itself - the module-level settings object refuses to build
+      # without it, and the container would crash-loop on boot.
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-dev-jwt-signing-key-change-me-in-production}
       AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
     volumes:
       - ./ai-engine:/app
       - media-data:/data/media
     depends_on:
       redis:
+        condition: service_healthy
+      backend-core:
         condition: service_healthy
     command: ["python", "-m", "app.worker"]
 

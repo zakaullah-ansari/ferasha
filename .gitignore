@@ -41,3 +41,9 @@ ai-engine/.models/
 Thumbs.db
 .idea/
 .vscode/
+
+# Local face-detection fixtures. These are third-party photographs pulled in
+# for manual verification of the blur pipeline; they are not ours to
+# redistribute. The privacy tests skip automatically when absent, and CI
+# supplies its own licensed fixtures.
+image-search/
