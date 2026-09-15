@@ -30,3 +30,11 @@ SECURE_SSL_REDIRECT = False
 CSRF_TRUSTED_ORIGINS = ["https://*.e2b.app", "https://*.e2b.dev", "http://localhost:8000"]
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# settings_test uses InMemoryStorage so the suite never touches the disk. That
+# is wrong for a running demo: uploads would not survive the request that
+# created them, and the worker in another process could never fetch them.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}

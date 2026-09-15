@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -46,7 +48,17 @@ if settings.DEBUG or settings.EXPOSE_API_DOCS:
     ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Django's static() helper would happily serve the whole MEDIA_ROOT tree,
+    # including private/originals/ - the unblurred vendor uploads. Serving
+    # those over HTTP defeats the entire Phase 3 privacy pipeline, so only the
+    # public derivative prefix is routed, even in DEBUG.
+    #
+    # In production nothing here applies: originals live in a bucket with no
+    # public read policy and are reached only by presigned URL.
+    urlpatterns += static(
+        f"{settings.MEDIA_URL}public/",
+        document_root=Path(settings.MEDIA_ROOT) / "public",
+    )
 
 admin.site.site_header = "Ferasha Administration"
 admin.site.site_title = "Ferasha"
