@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+from django.apps import AppConfig
+
+
+class MediaAssetsConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.media_assets"
+    label = "media_assets"
+    verbose_name = "Media Assets & Privacy Pipeline"

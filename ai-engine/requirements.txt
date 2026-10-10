@@ -1,0 +1,24 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-multipart==0.0.20
+PyJWT==2.10.1
+redis==5.2.1
+httpx==0.28.1
+
+# --- vision ---------------------------------------------------------------
+# mediapipe depends on `opencv-contrib-python`, which is the GUI build and
+# requires libGL.so.1 at import time. That library is absent from slim server
+# images, so installing mediapipe alone yields:
+#
+#     ImportError: libGL.so.1: cannot open shared object file
+#
+# Pinning the headless build here is not sufficient on its own, because pip
+# will still resolve mediapipe's dependency and the GUI build shadows it. The
+# Dockerfile therefore uninstalls opencv-contrib-python and reinstalls the
+# headless wheel with --no-deps after mediapipe. Do not "tidy" that step away.
+mediapipe==0.10.20
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+Pillow==11.0.0

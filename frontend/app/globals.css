@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+/**
+ * Ferasha theme.
+ *
+ * Values mirror `lib/design/tokens.ts`, which is the source of truth and is
+ * contrast-tested. `tests/tokens-sync.test.ts` asserts the two never drift —
+ * a CSS variable silently disagreeing with the tested token would reintroduce
+ * exactly the accessibility failure the tests exist to prevent.
+ *
+ * Tailwind v4 is configured in CSS rather than `tailwind.config.ts`; the
+ * config file is legacy in v4 and `@theme` is the supported mechanism. The
+ * deliverable is the token system, not the filename.
+ */
+@theme {
+  /* Brand */
+  --color-gold-50: #faf7f2;
+  --color-gold-100: #f6f0e4;
+  --color-gold-200: #ece1ca;
+  --color-gold-300: #e1cea9;
+  --color-gold-400: #d3b781;
+  --color-gold-500: #c5a059;
+  --color-gold-600: #a28349;
+  --color-gold-700: #826a3b;
+  --color-gold-800: #5f4d2b;
+  --color-gold-900: #3b301b;
+
+  /* Neutral: ivory ground -> obsidian ink */
+  --color-ink-50: #f6f4f0;
+  --color-ink-100: #edebe8;
+  --color-ink-200: #dddcd8;
+  --color-ink-300: #c2c1be;
+  --color-ink-400: #9e9d9a;
+  --color-ink-500: #797977;
+  --color-ink-600: #5e5e5c;
+  --color-ink-700: #474746;
+  --color-ink-800: #313130;
+  --color-ink-900: #1a1a1a;
+
+  /* Surfaces */
+  --color-ivory: #fdfbf7;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f6f4f0;
+
+  /* Semantic */
+  --color-success: #2f6b4f;
+  --color-warning: #8a5a1f;
+  --color-danger: #9b2c2c;
+  --color-info: #2c5282;
+
+  /* Type. Display carries the luxury signal; UI stays quiet. */
+  --font-display: var(--font-display-serif), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-ui-sans), system-ui, -apple-system, sans-serif;
+
+  /* Fluid display scale. clamp() so 320px phones and 1440px desktops both
+     read well without a cascade of breakpoint overrides. */
+  --text-display-sm: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+  --text-display-md: clamp(2rem, 1.5rem + 2.5vw, 3rem);
+  --text-display-lg: clamp(2.5rem, 1.6rem + 4.5vw, 4.5rem);
+
+  /* Motion. Luxury reads as calm: short, ease-out, never bouncy. */
+  --ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 320ms;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-ivory);
+    color: var(--color-ink-900);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+
+  /*
+   * A visible focus ring on every interactive element. Removing outlines is
+   * the single most common accessibility regression in a "polished" redesign,
+   * so the ring is defined once here rather than per component.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-ink-900);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /*
+   * Honour the OS setting globally. Individual components must not need to
+   * remember this. `motion` is additionally configured with
+   * reducedMotion="user", so both CSS and JS animation respect it.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Visible only to screen readers. Used for badge text alternatives so
+     meaning is never carried by colour or icon alone. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
