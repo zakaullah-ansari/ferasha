@@ -1,0 +1,8 @@
+# Local overrides. Compose only auto-loads this file when you run `docker compose`
+# from the project root without `-f`. If you pass `-f docker-compose.yml`, add
+# `-f docker-compose.override.yml` as well.
+#
+# Host port 6379 is often taken by Memurai/Redis on Windows — drop the publish.
+services:
+  redis:
+    ports: !reset []
