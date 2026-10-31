@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Loader2, Ruler } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -275,6 +275,11 @@ export const CheckoutStepper: React.FC<CheckoutStepperProps> = ({ onComplete }) 
                     Place Order
                     <ChevronRight className="ml-2 w-4 h-4" />
                   </Button>
+                </div>
+                <div className="text-center pt-4">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Secure Checkout powered by Razorpay
+                  </p>
                 </div>
               </div>
             </Card>
