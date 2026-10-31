@@ -21,6 +21,7 @@ from apps.common.models import BaseModel
 
 from .enums import (
     BackCoverage,
+    FaceCoverage,
     Fabric,
     GarmentType,
     NecklineModesty,
@@ -124,6 +125,10 @@ class ProductQuerySet(models.QuerySet):
             back_coverage__in=[BackCoverage.MODERATE, BackCoverage.FULL],
         )
 
+    def face_modest(self):
+        """Products presented with modest face imagery."""
+        return self.filter(face_coverage__in=["partial", "full"])
+
 
 class Product(BaseModel):
     """A sellable garment or dress material."""
@@ -180,6 +185,10 @@ class Product(BaseModel):
     )
     back_coverage = models.CharField(
         max_length=10, choices=BackCoverage.choices, default=BackCoverage.FULL
+    )
+    face_coverage = models.CharField(
+        max_length=10, choices=FaceCoverage.choices, default=FaceCoverage.EXPOSED,
+        help_text=_("Coverage of the face in product imagery.")
     )
     requires_slip = models.BooleanField(default=False)
     is_sheer_overlay_only = models.BooleanField(default=False)
@@ -262,6 +271,12 @@ class Product(BaseModel):
                 name="product_back_coverage_valid",
             ),
             models.CheckConstraint(
+                condition=models.Q(
+                    face_coverage__in=[c[0] for c in FaceCoverage.choices]
+                ),
+                name="product_face_coverage_valid",
+            ),
+            models.CheckConstraint(
                 condition=models.Q(status__in=[c[0] for c in ProductStatus.choices]),
                 name="product_status_valid",
             ),
@@ -286,6 +301,7 @@ class Product(BaseModel):
             sleeve_coverage=self.sleeve_coverage,
             neckline_modesty=self.neckline_modesty,
             back_coverage=self.back_coverage,
+            face_coverage=self.face_coverage,
             requires_slip=self.requires_slip,
             is_sheer_overlay_only=self.is_sheer_overlay_only,
         )

@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "apps.media_assets",
     "apps.orders",
     "apps.reviews",
+    "apps.cart",
 ]
 
 MIDDLEWARE = [
@@ -301,3 +302,4 @@ LOGGING = {
         "django.db.backends": {"level": "WARNING", "handlers": ["console"], "propagate": False},
     },
 }
+"apps.cart"

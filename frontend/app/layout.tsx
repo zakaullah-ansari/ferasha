@@ -54,6 +54,7 @@ export default function RootLayout({
         <SiteHeader />
         <main id="main">{children}</main>
         <SiteFooter />
+        <CartDrawer />
       </body>
     </html>
   );
