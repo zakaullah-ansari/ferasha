@@ -52,3 +52,36 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -fsS http://localhost:8001/ready || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+
+# ---------------------------------------------------------------------------
+# Test target.
+#
+# The runtime image above deliberately omits requirements-dev.txt, which is
+# correct for what ships but left the suite with no runnable path inside the
+# container: `pytest` was simply not on PATH. This target adds the dev
+# dependencies and nothing else, so the shipping image stays lean.
+#
+#     docker compose run --rm ai-tests
+#
+FROM base AS test
+
+USER root
+# Install ONLY the lines requirements-dev.txt adds, stripping its leading
+# `-r requirements.txt`.
+#
+# Installing the file as-is does not work. Re-stating requirements.txt makes pip
+# re-resolve mediapipe, whose declared dependency on opencv-contrib-python is
+# unsatisfied after the repair in the base stage - so pip helpfully reinstalls
+# the GUI build, it shadows the headless cv2, and the image dies on
+# `ImportError: libGL.so.1`. That is the regression the base stage warns about,
+# reproduced one layer later. Narrowing the install leaves the resolved opencv
+# alone, while pytest and friends still get their own dependencies.
+RUN grep -v '^-r ' requirements-dev.txt > /tmp/dev-only.txt \
+    && pip install -r /tmp/dev-only.txt \
+    && rm /tmp/dev-only.txt \
+    # Same guard as the base stage: fail the build rather than ship a test
+    # image that cannot import what it is meant to exercise.
+    && python -c "import cv2, mediapipe, pytest; print('test image ok, cv2', cv2.__version__)"
+USER ferasha
+
+CMD ["pytest", "-q"]

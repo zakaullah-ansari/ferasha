@@ -76,12 +76,50 @@ def synthetic_face_jpeg(synthetic_face_rgb: np.ndarray) -> bytes:
     return encode(synthetic_face_rgb, quality=95)
 
 
-@pytest.fixture(scope="session")
-def photo_paths() -> list:
-    """Real photographs, used to prove detection works on actual faces."""
+PHOTO_SUFFIXES = {".jpg", ".jpeg", ".webp", ".png"}
+
+
+def _photo_dirs() -> list:
+    """Where to look for real photographs, in priority order.
+
+    `tests/fixtures/photos` is committed, so the real-world detection tests run
+    everywhere including CI instead of skipping. They previously read an
+    `image-search/` directory at the repo root which was never committed and
+    did not exist, so 19 tests - every real-portrait assertion, the whole of
+    `test_api.py`, and the worker happy path - skipped silently and had never
+    executed.
+
+    `FERASHA_PHOTO_FIXTURES` overrides the location, which is how to point the
+    suite at a larger private set of actual vendor imagery. The legacy
+    directory is still honoured so an existing local checkout keeps working.
+    """
     from pathlib import Path
 
-    directory = Path(__file__).resolve().parents[2] / "image-search"
-    if not directory.is_dir():
-        return []
-    return sorted(p for p in directory.iterdir() if p.suffix in {".jpg", ".jpeg", ".webp", ".png"})
+    here = Path(__file__).resolve()
+    dirs = []
+    override = os.environ.get("FERASHA_PHOTO_FIXTURES")
+    if override:
+        dirs.append(Path(override))
+    dirs.append(here.parent / "fixtures" / "photos")
+    dirs.append(here.parents[2] / "image-search")
+    return dirs
+
+
+@pytest.fixture(scope="session")
+def photo_paths() -> list:
+    """Real photographs, used to prove detection works on actual faces.
+
+    Synthetic faces cannot stand in for these. `synthetic_face` is detectable,
+    but it is a drawn ellipse with two dark dots: it proves the plumbing, not
+    that MediaPipe finds a real face in a real photograph. Detectors are known
+    to do worse on darker skin and covered heads, which is precisely this
+    product's subject population, so the committed set is chosen to reflect it.
+    """
+    for directory in _photo_dirs():
+        if directory.is_dir():
+            paths = sorted(
+                p for p in directory.iterdir() if p.suffix.lower() in PHOTO_SUFFIXES
+            )
+            if paths:
+                return paths
+    return []

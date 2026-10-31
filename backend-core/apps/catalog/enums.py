@@ -117,6 +117,15 @@ class BackCoverage(models.TextChoices):
     FULL = "full", _("Fully covered")
 
 
+class FaceCoverage(models.TextChoices):
+    """Coverage of the face in product imagery.
+    Critical for customers filtering for Niqab/Hijab-compliant presentations.
+    """
+    EXPOSED = "exposed", _("Exposed")
+    PARTIAL = "partial", _("Partial coverage")
+    FULL = "full", _("Full coverage / Not shown")
+
+
 #: Coverage rankings, least to most covering.
 SLIT_ORDER = (
     SlitCoverage.THIGH,

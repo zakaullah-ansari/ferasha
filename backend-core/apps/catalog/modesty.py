@@ -38,6 +38,7 @@ class ModestyBadge(StrEnum):
     COVERED_BACK = "covered_back"
     FULL_SLEEVES = "full_sleeves"
     NO_SLIT = "no_slit"
+    FACE_MODEST = "face_modest"
 
 
 class ModestyAdvisory(StrEnum):
@@ -64,6 +65,7 @@ BADGE_LABELS: dict[ModestyBadge, str] = {
     ModestyBadge.COVERED_BACK: "Covered back",
     ModestyBadge.FULL_SLEEVES: "Full sleeves",
     ModestyBadge.NO_SLIT: "No slit",
+    ModestyBadge.FACE_MODEST: "Face modest",
 }
 
 ADVISORY_LABELS: dict[ModestyAdvisory, str] = {
@@ -86,6 +88,7 @@ class ModestyProfile:
     sleeve_coverage: str
     neckline_modesty: str
     back_coverage: str
+    face_coverage: str
     requires_slip: bool = False
     is_sheer_overlay_only: bool = False
 
@@ -146,6 +149,9 @@ def derive_modesty(profile: ModestyProfile) -> ModestyAssessment:
 
     if profile.back_coverage in (BackCoverage.MODERATE, BackCoverage.FULL):
         badges.append(ModestyBadge.COVERED_BACK)
+
+    if profile.face_coverage in ("partial", "full"):
+        badges.append(ModestyBadge.FACE_MODEST)
 
     # FULL_COVERAGE is the strongest claim and requires every dimension to
     # qualify simultaneously, including opacity and lining.

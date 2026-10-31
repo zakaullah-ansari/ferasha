@@ -21,7 +21,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         {/* Light grey ground so embellished garments and cutouts pop — the
             Nike/COS treatment, and the correct choice for zardozi and gota
             which are always shot on light. */}
-        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-ink-100">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted">
           {product.primary_image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -32,28 +32,28 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             />
           ) : (
             <div className="flex size-full items-center justify-center">
-              <span className="font-display text-sm text-ink-500">
+              <span className="font-display text-sm text-muted-foreground">
                 Imagery in preparation
               </span>
             </div>
           )}
           {product.supports_bespoke && (
-            <span className="absolute left-3 top-3 rounded-full bg-ivory/95 px-2.5 py-1 text-[0.65rem] font-medium tracking-wide text-ink-800 uppercase">
+            <span className="absolute left-3 top-3 rounded-full bg-background/95 px-2.5 py-1 text-[0.65rem] font-medium tracking-wide text-foreground uppercase">
               Bespoke
             </span>
           )}
         </div>
 
         <div className="mt-3 flex flex-1 flex-col">
-          <h3 className="font-display text-lg leading-snug text-ink-900 group-hover:underline">
+          <h3 className="font-display text-lg leading-snug text-foreground group-hover:underline">
             {product.name}
           </h3>
-          <p className="mt-0.5 text-xs tracking-wide text-ink-600 capitalize">
+          <p className="mt-0.5 text-xs tracking-wide text-muted-foreground capitalize">
             {product.fabric.replace(/_/g, " ")} ·{" "}
             {product.work_type.replace(/_/g, " ")}
           </p>
 
-          <p className="mt-2 text-base text-ink-900">
+          <p className="mt-2 text-base text-foreground">
             {formatINR(product.base_price)}
           </p>
 

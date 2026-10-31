@@ -77,6 +77,7 @@ services:
     build:
       context: ./ai-engine
       dockerfile: Dockerfile
+      target: base
     restart: unless-stopped
     environment:
       REDIS_URL: redis://redis:6379/0
@@ -99,6 +100,7 @@ services:
     build:
       context: ./ai-engine
       dockerfile: Dockerfile
+      target: base
     restart: unless-stopped
     environment:
       REDIS_URL: redis://redis:6379/0
@@ -118,6 +120,29 @@ services:
         condition: service_healthy
     command: ["python", "-m", "app.worker"]
 
+  # Test-only image: the runtime target has no pytest. Behind a profile so
+  # `docker compose up` never starts it; `docker compose run --rm ai-tests`
+  # builds the `test` target and runs the suite.
+  ai-tests:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+      target: test
+    profiles: ["test"]
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-dev-jwt-signing-key-change-me-in-production}
+      AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
+      BACKEND_BASE_URL: http://backend-core:8000
+    volumes:
+      - ./ai-engine:/app
+      # tests/test_config.py resolves the repo root as parents[2], which is `/`
+      # inside this container. Without these two the compose/env consistency
+      # tests skip themselves rather than run.
+      - ./docker-compose.yml:/docker-compose.yml:ro
+      - ./.env.example:/.env.example:ro
+    command: ["pytest", "-q"]
+
   frontend:
     build:
       context: ./frontend
@@ -125,7 +150,8 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
-      BACKEND_CORE_URL: http://backend-core:8000
+      # Read by next.config.ts rewrites and lib/api/client.ts for server-side fetches.
+      BACKEND_INTERNAL_URL: http://backend-core:8000
       AI_ENGINE_URL: http://ai-engine:8001
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
@@ -136,7 +162,7 @@ services:
       - "3000:3000"
     depends_on:
       - backend-core
-    command: ["npm", "run", "dev"]
+    command: ["pnpm", "dev"]
 
 volumes:
   postgres-data:

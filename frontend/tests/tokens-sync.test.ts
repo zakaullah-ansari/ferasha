@@ -53,4 +53,22 @@ describe("accessibility rules that live in CSS", () => {
     // `outline: none` without a replacement is the regression to catch.
     expect(css).not.toMatch(/:focus(-visible)?\s*\{[^}]*outline:\s*(none|0)\s*;/);
   });
+
+  it("leaves .sr-only to Tailwind, so focus:not-sr-only can reveal the skip link", () => {
+    // A custom .sr-only using the legacy `clip` property survives
+    // not-sr-only, which only resets clip-path: the skip link took focus but
+    // stayed clipped to nothing.
+    expect(css).not.toMatch(/\.sr-only\s*\{/);
+  });
+});
+
+describe("typography survives the shadcn preset", () => {
+  // `shadcn apply` rewrites font variables; these keep Ferasha's faces in place.
+  it("keeps the UI face on Inter", () => {
+    expect(css).toMatch(/--font-sans:\s*var\(--font-ui-sans\)/);
+  });
+
+  it("gives shadcn titles the display serif, like every other heading", () => {
+    expect(css).toMatch(/--font-heading:\s*var\(--font-display\)/);
+  });
 });

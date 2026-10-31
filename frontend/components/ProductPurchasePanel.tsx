@@ -27,7 +27,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="min-h-12 flex-1 rounded-full bg-ink-900 px-7 text-sm tracking-wide text-ivory hover:bg-ink-800"
+          className="min-h-12 flex-1 rounded-full bg-primary px-7 text-sm tracking-wide text-primary-foreground hover:bg-primary/95"
         >
           Select your fit
         </button>
@@ -39,7 +39,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         storefront can render — scarcity theatre would require leaking
         inventory depth to competitors.
       */}
-      <p className="mt-3 text-xs text-ink-600">
+      <p className="mt-3 text-xs text-muted-foreground">
         {available
           ? `${inStock.length} of ${product.variants.length} options available`
           : "Currently made to order only"}
@@ -48,7 +48,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
       {selection && (
         <div
           role="status"
-          className="mt-4 rounded-lg border border-gold-300 bg-gold-50 px-4 py-3 text-sm text-ink-800"
+          className="mt-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-foreground"
         >
           {selection.mode === "standard" ? (
             <>Size <strong>{selection.size}</strong> selected.</>
@@ -56,7 +56,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
             <>
               Bespoke measurements saved
               {selection.fullLining ? ", with full lining" : ""}.{" "}
-              <span className="text-ink-600">
+              <span className="text-muted-foreground">
                 Stitching adds {product.stitching_days} days.
               </span>
             </>
@@ -65,7 +65,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
       )}
 
       {product.supports_bespoke && (
-        <p className="mt-4 text-xs leading-relaxed text-ink-600">
+        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
           Bespoke tailoring from {formatINR(product.base_price)} plus
           surcharge · {product.stitching_days} days
         </p>

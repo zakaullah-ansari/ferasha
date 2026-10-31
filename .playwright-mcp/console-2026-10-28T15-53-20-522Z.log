@@ -1,0 +1,2 @@
+[    2111ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:3000/_next/static/chunks/2dbd7_next_dist_compiled_react-dom_5ec62893._.js:14537
+[    2567ms] [ERROR] WebSocket connection to 'ws://127.0.0.1:3000/_next/webpack-hmr' failed: Error during WebSocket handshake: net::ERR_INVALID_HTTP_RESPONSE @ http://127.0.0.1:3000/_next/static/chunks/2dbd7_next_dist_client_ef120a00._.js:5703

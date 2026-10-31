@@ -52,7 +52,7 @@ export default async function ProductPage({
     <article className="mx-auto max-w-6xl px-5 py-10">
       <div className="grid gap-10 md:grid-cols-2 md:gap-14">
         {/* Gallery */}
-        <div className="aspect-[4/5] overflow-hidden rounded-xl bg-ink-100">
+        <div className="aspect-[4/5] overflow-hidden rounded-xl bg-muted">
           {product.primary_image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -62,7 +62,7 @@ export default async function ProductPage({
             />
           ) : (
             <div className="flex size-full items-center justify-center">
-              <span className="font-display text-ink-500">
+              <span className="font-display text-muted-foreground">
                 Imagery in preparation
               </span>
             </div>
@@ -71,14 +71,14 @@ export default async function ProductPage({
 
         {/* Detail */}
         <div>
-          <h1 className="font-display text-[length:var(--text-display-sm)] leading-tight text-ink-900">
+          <h1 className="font-display text-[length:var(--text-display-sm)] leading-tight text-foreground">
             {product.name}
           </h1>
 
-          <p className="mt-3 text-xl text-ink-900">
+          <p className="mt-3 text-xl text-foreground">
             {formatINR(product.base_price)}
             {product.compare_at_price && (
-              <span className="ml-3 text-sm text-ink-500 line-through">
+              <span className="ml-3 text-sm text-muted-foreground line-through">
                 {formatINR(product.compare_at_price)}
               </span>
             )}
@@ -89,11 +89,11 @@ export default async function ProductPage({
             not buried in a tab. If a garment is sheer, the customer learns
             that before deciding, not after unwrapping it.
           */}
-          <div className="mt-6 rounded-xl border border-ink-200 bg-surface-raised p-4">
+          <div className="mt-6 rounded-xl border border-border bg-card p-4">
             <CoverageScore score={product.modesty.coverage_score} />
             <ModestyBadgeList modesty={product.modesty} className="mt-3" />
             {product.modesty.advisories.length > 0 && (
-              <p className="mt-3 text-xs leading-relaxed text-ink-700">
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                 Please read the advisories above before ordering.
               </p>
             )}
@@ -104,18 +104,18 @@ export default async function ProductPage({
           </div>
 
           {product.description && (
-            <p className="mt-8 text-sm leading-relaxed text-ink-700">
+            <p className="mt-8 text-sm leading-relaxed text-muted-foreground">
               {product.description}
             </p>
           )}
 
-          <dl className="mt-8 grid grid-cols-2 gap-y-3 border-t border-ink-200 pt-6 text-sm">
+          <dl className="mt-8 grid grid-cols-2 gap-y-3 border-t border-border pt-6 text-sm">
             {attributes.map(([label, value]) => (
               <div key={label}>
-                <dt className="text-xs tracking-wide text-ink-600 uppercase">
+                <dt className="text-xs tracking-wide text-muted-foreground uppercase">
                   {label}
                 </dt>
-                <dd className="mt-0.5 text-ink-900 capitalize">
+                <dd className="mt-0.5 text-foreground capitalize">
                   {value.replace(/_/g, " ")}
                 </dd>
               </div>
@@ -123,11 +123,11 @@ export default async function ProductPage({
           </dl>
 
           {product.care_instructions && (
-            <div className="mt-6 border-t border-ink-200 pt-6">
-              <h2 className="text-xs tracking-wide text-ink-600 uppercase">
+            <div className="mt-6 border-t border-border pt-6">
+              <h2 className="text-xs tracking-wide text-muted-foreground uppercase">
                 Care
               </h2>
-              <p className="mt-1 text-sm text-ink-700">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {product.care_instructions}
               </p>
             </div>

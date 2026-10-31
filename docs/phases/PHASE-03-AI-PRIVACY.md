@@ -133,15 +133,30 @@ Internal callbacks (worker → Django) are authenticated with an **HMAC signatur
 
 ## 9. Exit criteria
 
-- [ ] Upload → blurred derivative end-to-end in `docker compose`
-- [ ] Killing the worker mid-job leaves the asset `PENDING`, never `APPROVED`
-- [ ] Original is not reachable via any public URL (**explicitly tested**)
-- [ ] Zero-detection images route to `NEEDS_REVIEW`, not auto-approve
-- [ ] Variance collapse verified inside mask regions
-- [ ] EXIF/GPS stripped from every derivative
-- [ ] Malformed and oversized uploads rejected without crashing the worker
-- [ ] Unsigned or replayed callbacks rejected
-- [ ] Model loads once, not per request (measured)
+Assessed 2026-10-26 by executing the suites, then reassessed after clearing
+V1–V3 in [Verification debt](../ROADMAP.md#verification-debt). A test that
+exists but does not run proves nothing, so each criterion is marked on whether
+a *passing* test demonstrates it. Six of nine now do; the three that do not are
+blocked on V4, the missing photograph fixtures.
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Upload → blurred derivative end-to-end in `docker compose` | ⬜ | Still no live end-to-end run. The worker's happy path, `test_verified_blur_uploads_then_approves`, skips on V4, so even the in-process equivalent has never executed. |
+| Killing the worker mid-job leaves the asset `PENDING`, never `APPROVED` | ✅ | `test_crash_before_completion_leaves_job_recoverable` passes, and `test_media_privacy.py`'s database constraints independently reject `APPROVED` without a verified blur. The sibling case `test_failed_derivative_upload_never_reports_approved` skips on V4. |
+| Original is not reachable via any public URL (**explicitly tested**) | ✅ | `test_original_not_public.py` — 5 passing tests, including traversal and a URLconf sweep. |
+| Zero-detection images route to `NEEDS_REVIEW`, not auto-approve | ✅ | Proven at three layers: `test_zero_detections_never_auto_approves` (engine), `test_no_faces_reports_needs_review_and_uploads_nothing` (worker), and `test_zero_faces_cannot_be_approved` (callback, unblocked by the V1 fix). |
+| Variance collapse verified inside mask regions | 🟡 | Verified on synthetic faces: `test_unverifiable_blur_is_not_publishable` and `test_escalation_increases_strength_until_verified` pass. **Not verified on real photographs** — `test_face_region_is_unrecognisable_afterwards` skips on V4. |
+| EXIF/GPS stripped from every derivative | ✅ | `test_fixture_actually_has_gps` then `test_gps_is_stripped_from_derivative` pass, as does `test_orientation_is_applied_then_dropped`. The API-level `test_response_carries_no_exif` skips on V4, but the derivative path itself is proven. |
+| Malformed and oversized uploads rejected without crashing the worker | ✅ | Seven decode guards pass — truncated, oversized, unknown-magic, SVG, and a decompression bomb refused before decode — plus `test_malformed_image_is_rejected_not_retried_forever`. |
+| Unsigned or replayed callbacks rejected | ✅ | Unsigned, wrong-secret, tampered, stale and future-dated are refused, and `test_replayed_callback_is_rejected` now passes, so nonce replay protection is demonstrated rather than assumed. |
+| Model loads once, not per request (measured) | 🟡 | Structurally sound: a module-level singleton with an idempotent `load()` behind a `_loaded` flag, called once in the lifespan and exposed on `/ready`, which `test_ready_reports_model_state` checks. Nothing *measures* a load count, so the criterion as written is still unmet. |
+
+**Verdict:** six of nine criteria are met under execution, up from one before
+V1–V3 were cleared. The privacy model is sound and every Django-side guarantee
+holds. Two gaps remain and both are narrow: blur efficacy is proven on
+synthetic faces but not on real photographs, and the happy path has never run
+— both blocked on V4 — plus a load-count measurement that was never written.
+This phase should not be recorded complete until V4 is closed.
 
 ---
 

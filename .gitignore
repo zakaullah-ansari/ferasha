@@ -18,6 +18,7 @@ local_settings.py
 
 # Node / Next.js
 node_modules/
+.pnpm-store/
 .next/
 out/
 build/
@@ -47,3 +48,6 @@ Thumbs.db
 # redistribute. The privacy tests skip automatically when absent, and CI
 # supplies its own licensed fixtures.
 image-search/
+
+*storybook.log
+storybook-static

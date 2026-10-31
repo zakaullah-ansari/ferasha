@@ -1,0 +1,14 @@
+# pnpm 11 blocks dependency install scripts unless approved here.
+# esbuild (pulled in by Vite/Vitest) needs its postinstall to fetch its native binary.
+allowBuilds:
+  esbuild: true
+
+# Pin exact versions, as package.json does by hand. The shadcn CLI runs
+# `pnpm add` without --save-exact, so without this every `shadcn add` would
+# introduce caret ranges.
+saveExact: true
+
+# Inside Docker the anonymous volume's node_modules may drift from the image's.
+# pnpm 11's pre-script deps check wants to purge and re-install, but prompts for
+# confirmation — which hangs in a non-TTY container. This lets it self-heal.
+confirmModulesPurge: false

@@ -11,8 +11,10 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 import time
 import uuid
+from pathlib import Path
 
 import pytest
 from django.core.cache import cache
@@ -24,6 +26,16 @@ from apps.media_assets.models import AssetKind, MediaAsset, ModerationStatus
 
 pytestmark = pytest.mark.django_db
 
+# The key every test in this module signs with. The autouse fixture below
+# pins it into settings too, so the outcome never depends on whichever
+# AI_ENGINE_SHARED_SECRET the ambient environment happens to supply.
+#
+# Without that pin, a real secret in .env left Django verifying with one key
+# while these tests signed with another. The failure mode was misleading rather
+# than loud: every assertion expecting a *rejection* still passed, because a
+# mismatched signature is refused for the same reason a forged one is, and only
+# the assertions expecting success failed. The suite looked half-broken instead
+# of misconfigured.
 SECRET = "insecure-shared-secret"
 
 
@@ -40,6 +52,31 @@ def sign(body: dict, *, secret: str = SECRET, timestamp: int | None = None,
         "HTTP_X_FERASHA_NONCE": nc,
         "HTTP_X_FERASHA_SIGNATURE": signature,
     }
+
+
+def _interpreter_candidates(engine_root: Path) -> list[Path]:
+    """Every place an engine-capable interpreter might live, in priority order.
+
+    `AI_ENGINE_PYTHON` comes first so CI and unusual layouts can point at an
+    interpreter directly. The two venv paths differ only by platform:
+    `bin/python` on POSIX, `Scripts/python.exe` on Windows. Only the former was
+    checked originally, so on Windows this test could never find an
+    interpreter even when one had been built.
+    """
+    override = os.environ.get("AI_ENGINE_PYTHON")
+    candidates = [Path(override)] if override else []
+    candidates += [
+        engine_root / ".venv" / "bin" / "python",
+        engine_root / ".venv" / "Scripts" / "python.exe",
+    ]
+    return candidates
+
+
+def _engine_interpreter(engine_root: Path) -> Path | None:
+    for candidate in _interpreter_candidates(engine_root):
+        if candidate.exists():
+            return candidate
+    return None
 
 
 @pytest.fixture
@@ -66,6 +103,17 @@ def asset(db, uploader):
     )
     instance.original.save("o.jpg", ContentFile(b"\xff\xd8\xff original"), save=True)
     return instance
+
+
+@pytest.fixture(autouse=True)
+def pinned_shared_secret(settings):
+    """Make the signing key a property of the test, not of the environment.
+
+    `_expected_signature` reads `settings.AI_ENGINE_SHARED_SECRET` on every
+    call, so assigning it here is sufficient, and pytest-django restores the
+    previous value after each test.
+    """
+    settings.AI_ENGINE_SHARED_SECRET = SECRET
 
 
 @pytest.fixture(autouse=True)
@@ -261,12 +309,25 @@ class TestCrossServiceCompatibility:
         """
         import json as _json
         import subprocess
-        from pathlib import Path
 
         engine_root = Path(__file__).resolve().parents[4] / "ai-engine"
-        interpreter = engine_root / ".venv" / "bin" / "python"
-        if not interpreter.exists():
-            pytest.skip("ai-engine virtualenv not built")
+        interpreter = _engine_interpreter(engine_root)
+        if interpreter is None:
+            message = (
+                "no ai-engine interpreter found, so the cross-service signature "
+                "contract was NOT checked. This needs an interpreter carrying the "
+                "engine's dependencies (fastapi, pyjwt, pydantic-settings); the "
+                "backend image does not have them, so `docker compose run "
+                "backend-core pytest` cannot satisfy it. Build ai-engine/.venv, or "
+                "set AI_ENGINE_PYTHON. Searched: "
+                + ", ".join(str(c) for c in _interpreter_candidates(engine_root))
+            )
+            # A silent skip is how this test spent its whole life green without
+            # ever executing. Under FERASHA_REQUIRE_CROSS_SERVICE=1 - which CI
+            # sets - absence is a failure, not a shrug.
+            if os.environ.get("FERASHA_REQUIRE_CROSS_SERVICE") == "1":
+                pytest.fail(message)
+            pytest.skip(message)
 
         body = {
             "asset_id": str(asset.pk),
@@ -291,8 +352,16 @@ class TestCrossServiceCompatibility:
             capture_output=True,
             text=True,
             timeout=120,
+            # A deliberately small environment: enough for the interpreter to
+            # boot on either platform, and nothing that could leak this
+            # machine's real configuration into a signature. Windows needs
+            # SYSTEMROOT and PATH or python.exe will not start at all.
             env={
-                "PATH": "/usr/bin:/bin",
+                **{
+                    k: v
+                    for k, v in os.environ.items()
+                    if k in ("PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP")
+                },
                 "PYTHONPATH": str(engine_root),
                 "JWT_SIGNING_KEY": "x" * 40,
                 "AI_ENGINE_SHARED_SECRET": SECRET,

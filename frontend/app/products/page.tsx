@@ -20,13 +20,13 @@ export default async function ProductsPage({
 
   return (
     <section className="mx-auto max-w-6xl px-5 py-14">
-      <h1 className="font-display text-3xl text-ink-900">Collection</h1>
-      <p className="mt-2 text-sm text-ink-600">
+      <h1 className="font-display text-3xl text-foreground">Collection</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
         {count} {count === 1 ? "garment" : "garments"}
       </p>
 
       {results.length === 0 ? (
-        <p className="mt-12 text-ink-700">
+        <p className="mt-12 text-muted-foreground">
           No garments match these filters yet.
         </p>
       ) : (

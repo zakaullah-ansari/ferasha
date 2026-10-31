@@ -1,0 +1,78 @@
+- generic [active] [ref=f11e1]:
+  - link "Skip to content" [ref=f11e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f11e3]:
+    - navigation "Primary" [ref=f11e4]:
+      - link "Ferasha" [ref=f11e5] [cursor=pointer]:
+        - /url: /
+      - list [ref=f11e6]:
+        - listitem [ref=f11e7]:
+          - link "Collection" [ref=f11e8] [cursor=pointer]:
+            - /url: /products
+        - listitem [ref=f11e9]:
+          - link "Bespoke" [ref=f11e10] [cursor=pointer]:
+            - /url: /products?supports_bespoke=true
+  - main [ref=f11e11]:
+    - article [ref=f11e12]:
+      - generic [ref=f11e13]:
+        - generic [ref=f11e14]: Imagery in preparation
+        - generic [ref=f11e17]:
+          - heading "Zardozi Bridal Lehenga - Deep Maroon" [level=1] [ref=f11e18]
+          - paragraph [ref=f11e19]: ₹1,89,000
+          - generic [ref=f11e20]:
+            - generic [ref=f11e21]:
+              - generic [ref=f11e22]: Coverage
+              - generic [ref=f11e23]: 87/100
+              - generic [ref=f11e24]: high coverage
+            - list "Modesty and coverage information" [ref=f11e27]:
+              - listitem [ref=f11e28]:
+                - generic [aria-hidden] [ref=f11e29]: ◆
+                - generic [ref=f11e30]: "Modesty feature:"
+                - text: Fully lined
+              - listitem [ref=f11e31]:
+                - generic [aria-hidden] [ref=f11e32]: ◆
+                - generic [ref=f11e33]: "Modesty feature:"
+                - text: Opaque fabric
+              - listitem [ref=f11e34]:
+                - generic [aria-hidden] [ref=f11e35]: ◆
+                - generic [ref=f11e36]: "Modesty feature:"
+                - text: Full sleeves
+              - listitem [ref=f11e37]:
+                - generic [aria-hidden] [ref=f11e38]: ◆
+                - generic [ref=f11e39]: "Modesty feature:"
+                - text: No slit
+              - listitem [ref=f11e40]:
+                - generic [aria-hidden] [ref=f11e41]: ◆
+                - generic [ref=f11e42]: "Modesty feature:"
+                - text: Modest neckline
+              - listitem [ref=f11e43]:
+                - generic [aria-hidden] [ref=f11e44]: ◆
+                - generic [ref=f11e45]: "Modesty feature:"
+                - text: Covered back
+              - listitem [ref=f11e46]:
+                - generic [aria-hidden] [ref=f11e47]: ◆
+                - generic [ref=f11e48]: "Modesty feature:"
+                - text: Full coverage
+          - generic [ref=f11e50]:
+            - button "Select your fit" [ref=f11e52]
+            - paragraph [ref=f11e53]: 3 of 3 options available
+          - paragraph [ref=f11e54]: Hand-worked zardozi on raw silk, fully lined, with a six-metre kali flare. Approximately 400 hours of atelier work.
+          - generic [ref=f11e55]:
+            - generic [ref=f11e56]:
+              - term [ref=f11e57]: Fabric
+              - definition [ref=f11e58]: raw silk
+            - generic [ref=f11e59]:
+              - term [ref=f11e60]: Work
+              - definition [ref=f11e61]: zardozi
+            - generic [ref=f11e62]:
+              - term [ref=f11e63]: Occasion
+              - definition [ref=f11e64]: bridal
+            - generic [ref=f11e65]:
+              - term [ref=f11e66]: Garment
+              - definition [ref=f11e67]: lehenga
+  - contentinfo [ref=f11e68]:
+    - generic [ref=f11e69]:
+      - paragraph [ref=f11e70]: Ferasha
+      - paragraph [ref=f11e71]: Modest luxury, cut to order in Mumbai. Every garment publishes its coverage so you know what you are buying before it arrives.
+      - paragraph [ref=f11e72]: Prices in INR, inclusive of GST where applicable.
+  - alert [ref=f11e73]

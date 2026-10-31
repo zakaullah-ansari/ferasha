@@ -32,7 +32,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#1a1a1a",
+  // The preset's --foreground, oklch(0.153 0.006 107.1), in sRGB.
+  themeColor: "#0c0c09",
   width: "device-width",
   initialScale: 1,
 };
@@ -42,11 +43,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en-IN" className={`${display.variable} ${ui.variable}`}>
-      <body className="min-h-dvh bg-ivory text-ink-900 antialiased">
+      <body className="min-h-dvh bg-background text-foreground antialiased">
         {/* Skip link: the first tab stop on every page. */}
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-ivory"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
         >
           Skip to content
         </a>
@@ -60,17 +61,17 @@ export default function RootLayout({
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200/70 bg-ivory/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/90 backdrop-blur">
       <nav
         aria-label="Primary"
         className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4"
       >
-        <a href="/" className="font-display text-2xl tracking-tight text-ink-900">
+        <a href="/" className="font-display text-2xl tracking-tight text-foreground">
           Ferasha
         </a>
-        <ul className="flex items-center gap-6 text-sm text-ink-700">
-          <li><a href="/products" className="hover:text-ink-900">Collection</a></li>
-          <li><a href="/products?supports_bespoke=true" className="hover:text-ink-900">Bespoke</a></li>
+        <ul className="flex items-center gap-6 text-sm text-muted-foreground">
+          <li><a href="/products" className="hover:text-foreground">Collection</a></li>
+          <li><a href="/products?supports_bespoke=true" className="hover:text-foreground">Bespoke</a></li>
         </ul>
       </nav>
     </header>
@@ -79,16 +80,16 @@ function SiteHeader() {
 
 function SiteFooter() {
   return (
-    <footer className="mt-24 bg-ink-900 text-ink-100">
+    // `dark` scopes the preset's dark palette to the footer, so the inverted
+    // band uses the theme's own contrast-tested pairs rather than hand-picked ones.
+    <footer className="dark mt-24 bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-5 py-12">
-        {/* Gold is legible at 7.08:1 on obsidian — the one surface where
-            brand gold may carry text. */}
-        <p className="font-display text-xl text-gold-500">Ferasha</p>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-300">
+        <p className="font-display text-xl">Ferasha</p>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
           Modest luxury, cut to order in Mumbai. Every garment publishes its
           coverage so you know what you are buying before it arrives.
         </p>
-        <p className="mt-6 text-xs text-ink-400">
+        <p className="mt-6 text-xs text-muted-foreground">
           Prices in INR, inclusive of GST where applicable.
         </p>
       </div>

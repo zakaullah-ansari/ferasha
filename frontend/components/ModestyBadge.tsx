@@ -19,9 +19,11 @@ import type { Modesty, ModestyFacet } from "@/lib/api/types";
 type Tone = "badge" | "advisory";
 
 const TONE_CLASSES: Record<Tone, string> = {
-  // gold-700 on gold-50 — brand gold itself is 2.38:1 and cannot carry text.
-  badge: "border-gold-300 bg-gold-50 text-gold-800",
-  // The warning hue, which is contrast-tested for body text on ivory.
+  // Primary on a 5% primary tint; the pair is held to 4.5:1 in
+  // tests/preset-contrast.test.ts.
+  badge: "border-primary/30 bg-primary/5 text-primary",
+  // The preset has no warning hue, so this keeps Ferasha's, contrast-tested
+  // on the preset's white ground in tests/preset-contrast.test.ts.
   advisory: "border-warning/40 bg-warning/8 text-warning",
 };
 
@@ -79,7 +81,7 @@ export function ModestyBadgeList({
         <Pill key={facet.code} facet={facet} tone="badge" />
       ))}
       {hidden > 0 && (
-        <li className="text-xs text-ink-600">+{hidden} more</li>
+        <li className="text-xs text-muted-foreground">+{hidden} more</li>
       )}
     </ul>
   );
@@ -103,22 +105,22 @@ export function CoverageScore({
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <span className="text-xs tracking-wide text-ink-600 uppercase">Coverage</span>
+      <span className="text-xs tracking-wide text-muted-foreground uppercase">Coverage</span>
       <span
-        className="font-display text-base text-ink-900 tabular-nums"
+        className="font-display text-base text-foreground tabular-nums"
         data-testid="coverage-score"
       >
         {score}
-        <span className="text-ink-500 text-xs">/100</span>
+        <span className="text-muted-foreground text-xs">/100</span>
       </span>
       {/* The band gives the number meaning without implying a value judgement. */}
       <span className="sr-only">{`${band} coverage`}</span>
       <span
         aria-hidden="true"
-        className="h-1 w-16 overflow-hidden rounded-full bg-ink-200"
+        className="h-1 w-16 overflow-hidden rounded-full bg-primary/20"
       >
         <span
-          className="block h-full rounded-full bg-gold-600"
+          className="block h-full rounded-full bg-primary"
           style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
         />
       </span>

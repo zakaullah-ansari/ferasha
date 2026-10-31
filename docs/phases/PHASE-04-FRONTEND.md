@@ -124,19 +124,31 @@ Target: **WCAG 2.2 AA**.
 
 ## 8. Deliverables
 
-- `tailwind.config.ts` — full token system with ramps
-- `app/layout.tsx`, fonts, global styles
-- `components/FitDrawer.tsx` + sub-components
-- `components/ModestyBadge.tsx` — driven by the Phase 1 derivation output
-- `components/ProductCard.tsx`, `ProductGallery.tsx`, `FacetFilter.tsx`
-- `lib/api/` — generated client + typed fetch wrappers
-- `lib/units.ts` — cm/inch conversion, tested
-- PWA manifest + service worker
-- Playwright E2E for the FitDrawer journey
+Status as of 2026-10-26 — shipped in `82c2d78`.
+
+| Deliverable | Status |
+|---|---|
+| Full token system with ramps | ✅ `lib/design/tokens.ts` + `@theme` in `app/globals.css`. **No `tailwind.config.ts`** — see note below. |
+| `app/layout.tsx`, fonts, global styles | ✅ |
+| `components/FitDrawer.tsx` + sub-components | ✅ built on `vaul`; 22 tests |
+| `components/ModestyBadge.tsx` | ✅ |
+| `components/ProductCard.tsx` | ✅ |
+| `components/ProductGallery.tsx` | ⬜ not started |
+| `components/FacetFilter.tsx` | ⬜ not started |
+| `lib/api/` typed client + wrappers | ✅ `client.ts`, `types.ts`, `fit-schema.ts` |
+| `lib/units.ts` — cm/inch, tested | ✅ 50 tests |
+| PWA manifest + service worker | ⬜ not started — `frontend/public/` does not exist |
+| Playwright E2E for the FitDrawer journey | ⬜ not started — only Vitest/jsdom coverage exists |
+
+Also shipped, beyond the original list: `components/ProductPurchasePanel.tsx`, `app/products/page.tsx`, `app/products/[slug]/page.tsx`, and `tests/tokens-sync.test.ts`, which fails if `globals.css` drifts from the contrast-tested tokens.
+
+**On the absent `tailwind.config.ts`:** Tailwind v4 is configured in CSS through `@theme`, and the config file is legacy. The deliverable was the token system, not the filename. Recorded as D18 in the [roadmap](../ROADMAP.md). `lib/design/tokens.ts` is the source of truth; `tests/tokens-sync.test.ts` enforces that the CSS variables agree with it, so a stale variable cannot silently reintroduce the gold-on-ivory contrast failure that motivated recommendation #8.
 
 ---
 
 ## 9. Exit criteria
+
+None of these have been run yet. Verifying them is the remaining work on this phase, alongside the four unstarted deliverables above.
 
 - [ ] Lighthouse ≥ 90 across Performance, Accessibility, Best Practices, SEO — throttled mobile
 - [ ] axe-core zero critical violations

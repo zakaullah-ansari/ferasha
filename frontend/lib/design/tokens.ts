@@ -1,5 +1,9 @@
 /**
- * Ferasha design tokens — the single source of truth for colour.
+ * Ferasha design tokens.
+ *
+ * Components currently paint with the shadcn preset tokens in `app/globals.css`
+ * (contrast-tested in `tests/preset-contrast.test.ts`). This palette stays
+ * defined and tested, and the WCAG maths below serves both.
  *
  * Tailwind reads these via `app/globals.css` (`@theme`). They are exported as
  * TypeScript so the contrast rules can be *tested* rather than asserted in a

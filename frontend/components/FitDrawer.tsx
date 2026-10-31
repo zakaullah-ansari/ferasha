@@ -259,7 +259,7 @@ export function FitDrawer({
         aria-hidden="true"
         tabIndex={-1}
         onClick={onClose}
-        className="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-foreground/40 backdrop-blur-[2px]"
       />
 
       <div
@@ -268,24 +268,24 @@ export function FitDrawer({
         aria-modal="true"
         aria-labelledby={headingId}
         className={cn(
-          "relative flex h-full w-full flex-col bg-ivory shadow-2xl",
+          "relative flex h-full w-full flex-col bg-background shadow-2xl",
           // Bottom sheet on phones, side drawer from md up.
           "max-md:mt-auto max-md:h-[92vh] max-md:rounded-t-2xl",
           "md:max-w-lg",
         )}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-ink-200 px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
-            <h2 id={headingId} className="font-display text-xl text-ink-900">
+            <h2 id={headingId} className="font-display text-xl text-foreground">
               Select your fit
             </h2>
-            <p className="mt-0.5 text-sm text-ink-600">{productName}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{productName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close fit selection"
-            className="rounded-full p-2 text-ink-700 hover:bg-ink-100"
+            className="rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <span aria-hidden="true">✕</span>
           </button>
@@ -295,7 +295,7 @@ export function FitDrawer({
         <div
           role="tablist"
           aria-label="Fit mode"
-          className="flex gap-1 border-b border-ink-200 px-5 py-3"
+          className="flex gap-1 border-b border-border px-5 py-3"
         >
           {(["standard", "bespoke"] as const).map((value) => {
             const disabled = value === "bespoke" && !supportsBespoke;
@@ -310,8 +310,8 @@ export function FitDrawer({
                 className={cn(
                   "min-h-11 rounded-full px-4 text-sm font-medium capitalize transition-colors",
                   mode === value
-                    ? "bg-ink-900 text-ivory"
-                    : "text-ink-700 hover:bg-ink-100",
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                   disabled && "cursor-not-allowed opacity-40",
                 )}
               >
@@ -325,7 +325,7 @@ export function FitDrawer({
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {mode === "standard" ? (
             <fieldset>
-              <legend className="mb-3 text-sm font-medium text-ink-800">
+              <legend className="mb-3 text-sm font-medium text-foreground">
                 Standard size
               </legend>
               <div className="grid grid-cols-3 gap-2">
@@ -335,8 +335,8 @@ export function FitDrawer({
                     className={cn(
                       "flex min-h-11 cursor-pointer items-center justify-center rounded-lg border text-sm",
                       size === option
-                        ? "border-ink-900 bg-ink-900 text-ivory"
-                        : "border-ink-300 text-ink-800 hover:border-ink-500",
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input text-foreground hover:border-ring",
                     )}
                   >
                     <input
@@ -351,7 +351,7 @@ export function FitDrawer({
                   </label>
                 ))}
               </div>
-              <p className="mt-4 text-xs leading-relaxed text-ink-600">
+              <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
                 Unsure? Bespoke tailoring uses your own measurements and is cut
                 to order.
               </p>
@@ -360,13 +360,13 @@ export function FitDrawer({
             <>
               {/* Unit toggle */}
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm font-medium text-ink-800">
+                <span className="text-sm font-medium text-foreground">
                   Measurements
                 </span>
                 <div
                   role="group"
                   aria-label="Measurement unit"
-                  className="flex rounded-full border border-ink-300 p-0.5"
+                  className="flex rounded-full border border-input p-0.5"
                 >
                   {(["inch", "cm"] as const).map((option) => (
                     <button
@@ -377,8 +377,8 @@ export function FitDrawer({
                       className={cn(
                         "min-h-9 rounded-full px-3 text-xs font-medium",
                         unit === option
-                          ? "bg-ink-900 text-ivory"
-                          : "text-ink-700",
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground",
                       )}
                     >
                       {option === "inch" ? "Inches" : "Centimetres"}
@@ -403,10 +403,10 @@ export function FitDrawer({
                     <div key={name}>
                       <label
                         htmlFor={fieldId}
-                        className="mb-1 block text-sm text-ink-800"
+                        className="mb-1 block text-sm text-foreground"
                       >
                         {range.label}
-                        <span className="ml-1 text-danger" aria-hidden="true">
+                        <span className="ml-1 text-destructive" aria-hidden="true">
                           *
                         </span>
                         <span className="sr-only">(required)</span>
@@ -422,13 +422,13 @@ export function FitDrawer({
                           aria-invalid={error ? true : undefined}
                           aria-describedby={error ? errorId : undefined}
                           className={cn(
-                            "min-h-11 w-full rounded-lg border bg-surface-raised px-3 text-ink-900",
+                            "min-h-11 w-full rounded-lg border bg-background px-3 text-foreground",
                             error
-                              ? "border-danger"
-                              : "border-ink-300 focus:border-ink-900",
+                              ? "border-destructive"
+                              : "border-input focus:border-ring",
                           )}
                         />
-                        <span className="w-8 text-sm text-ink-600">
+                        <span className="w-8 text-sm text-muted-foreground">
                           {unitLabel}
                         </span>
                       </div>
@@ -436,7 +436,7 @@ export function FitDrawer({
                         <p
                           id={errorId}
                           role="alert"
-                          className="mt-1 text-xs text-danger"
+                          className="mt-1 text-xs text-destructive"
                         >
                           {error}
                         </p>
@@ -446,12 +446,12 @@ export function FitDrawer({
                 })}
               </div>
 
-              <label className="mt-5 flex min-h-11 items-center gap-2.5 text-sm text-ink-800">
+              <label className="mt-5 flex min-h-11 items-center gap-2.5 text-sm text-foreground">
                 <input
                   type="checkbox"
                   checked={fullLining}
                   onChange={(e) => setFullLining(e.target.checked)}
-                  className="size-4 accent-ink-900"
+                  className="size-4 accent-primary"
                 />
                 Add full lining
               </label>
@@ -459,7 +459,7 @@ export function FitDrawer({
           )}
         </div>
 
-        <footer className="border-t border-ink-200 px-5 py-4">
+        <footer className="border-t border-border px-5 py-4">
           {/* aria-live so validation failure is announced, not just shown. */}
           <p aria-live="polite" className="sr-only">
             {submitted && Object.keys(errors).length > 0
@@ -469,7 +469,7 @@ export function FitDrawer({
           <button
             type="button"
             onClick={handleSubmit}
-            className="min-h-12 w-full rounded-full bg-ink-900 text-sm font-medium tracking-wide text-ivory hover:bg-ink-800"
+            className="min-h-12 w-full rounded-full bg-primary text-sm font-medium tracking-wide text-primary-foreground hover:bg-primary/95"
           >
             {mode === "standard" ? "Confirm size" : "Save measurements"}
           </button>

@@ -1,0 +1,134 @@
+- generic [active] [ref=f16e1]:
+  - link "Skip to content" [ref=f16e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f16e3]:
+    - navigation "Primary" [ref=f16e4]:
+      - link "Ferasha" [ref=f16e5] [cursor=pointer]:
+        - /url: /
+      - list [ref=f16e6]:
+        - listitem [ref=f16e7]:
+          - link "Collection" [ref=f16e8] [cursor=pointer]:
+            - /url: /products
+        - listitem [ref=f16e9]:
+          - link "Bespoke" [ref=f16e10] [cursor=pointer]:
+            - /url: /products?supports_bespoke=true
+  - main [ref=f16e11]:
+    - generic [ref=f16e12]:
+      - paragraph [ref=f16e13]: Mumbai · Est. 2026
+      - heading "Modest luxury, cut to order." [level=1] [ref=f16e14]
+      - paragraph [ref=f16e15]: Pakistani and Punjabi suits, bridal lehengas, sharara and gharara. Every garment publishes its coverage honestly — so you know exactly what arrives.
+      - link "View the collection" [ref=f16e16] [cursor=pointer]:
+        - /url: /products
+    - generic [ref=f16e17]:
+      - generic [ref=f16e18]:
+        - heading "Latest pieces" [level=2] [ref=f16e19]
+        - link "All garments →" [ref=f16e20] [cursor=pointer]:
+          - /url: /products
+      - generic [ref=f16e21]:
+        - article [ref=f16e22]:
+          - link "Imagery in preparation Zardozi Bridal Lehenga - Deep Maroon raw silk · zardozi ₹1,89,000 Modesty and coverage information Coverage 87/100 high coverage" [ref=f16e23] [cursor=pointer]:
+            - /url: /products/zardozi-bridal-lehenga-maroon
+            - generic [ref=f16e24]: Imagery in preparation
+            - generic [ref=f16e27]:
+              - heading "Zardozi Bridal Lehenga - Deep Maroon" [level=3] [ref=f16e28]
+              - paragraph [ref=f16e29]: raw silk · zardozi
+              - paragraph [ref=f16e30]: ₹1,89,000
+              - generic [ref=f16e31]:
+                - list "Modesty and coverage information" [ref=f16e32]:
+                  - listitem [ref=f16e33]:
+                    - generic [aria-hidden] [ref=f16e34]: ◆
+                    - generic [ref=f16e35]: "Modesty feature:"
+                    - text: Fully lined
+                  - listitem [ref=f16e36]:
+                    - generic [aria-hidden] [ref=f16e37]: ◆
+                    - generic [ref=f16e38]: "Modesty feature:"
+                    - text: Opaque fabric
+                  - listitem [ref=f16e39]:
+                    - generic [aria-hidden] [ref=f16e40]: ◆
+                    - generic [ref=f16e41]: "Modesty feature:"
+                    - text: Full sleeves
+                  - listitem [ref=f16e42]: +4 more
+                - generic [ref=f16e43]:
+                  - generic [ref=f16e44]: Coverage
+                  - generic [ref=f16e45]: 87/100
+                  - generic [ref=f16e46]: high coverage
+        - article [ref=f16e49]:
+          - link "Imagery in preparation Organza Dupatta Suit - Blush organza · resham ₹8,900 Modesty and coverage information Coverage 31/100 low coverage" [ref=f16e50] [cursor=pointer]:
+            - /url: /products/organza-suit-blush
+            - generic [ref=f16e51]: Imagery in preparation
+            - generic [ref=f16e54]:
+              - heading "Organza Dupatta Suit - Blush" [level=3] [ref=f16e55]
+              - paragraph [ref=f16e56]: organza · resham
+              - paragraph [ref=f16e57]: ₹8,900
+              - generic [ref=f16e58]:
+                - list "Modesty and coverage information" [ref=f16e59]:
+                  - listitem [ref=f16e60]:
+                    - generic [aria-hidden] [ref=f16e61]: ▲
+                    - generic [ref=f16e62]: "Advisory:"
+                    - text: Slip required
+                  - listitem [ref=f16e63]:
+                    - generic [aria-hidden] [ref=f16e64]: ◆
+                    - generic [ref=f16e65]: "Modesty feature:"
+                    - text: Full sleeves
+                  - listitem [ref=f16e66]: +1 more
+                - generic [ref=f16e67]:
+                  - generic [ref=f16e68]: Coverage
+                  - generic [ref=f16e69]: 31/100
+                  - generic [ref=f16e70]: low coverage
+        - article [ref=f16e73]:
+          - link "Imagery in preparation Chikankari Kurta Set - Powder Blue cotton · chikankari ₹2,350 Modesty and coverage information Coverage 63/100 moderate coverage" [ref=f16e74] [cursor=pointer]:
+            - /url: /products/chikankari-kurta-powder-blue
+            - generic [ref=f16e75]: Imagery in preparation
+            - generic [ref=f16e78]:
+              - heading "Chikankari Kurta Set - Powder Blue" [level=3] [ref=f16e79]
+              - paragraph [ref=f16e80]: cotton · chikankari
+              - paragraph [ref=f16e81]: ₹2,350
+              - generic [ref=f16e82]:
+                - list "Modesty and coverage information" [ref=f16e83]:
+                  - listitem [ref=f16e84]:
+                    - generic [aria-hidden] [ref=f16e85]: ▲
+                    - generic [ref=f16e86]: "Advisory:"
+                    - text: High slit
+                  - listitem [ref=f16e87]:
+                    - generic [aria-hidden] [ref=f16e88]: ◆
+                    - generic [ref=f16e89]: "Modesty feature:"
+                    - text: Opaque fabric
+                  - listitem [ref=f16e90]: +2 more
+                - generic [ref=f16e91]:
+                  - generic [ref=f16e92]: Coverage
+                  - generic [ref=f16e93]: 63/100
+                  - generic [ref=f16e94]: moderate coverage
+        - article [ref=f16e97]:
+          - link "Imagery in preparation Farshi Gharara - Ivory & Gold chiffon · gota patti ₹64,500 Modesty and coverage information Coverage 73/100 high coverage" [ref=f16e98] [cursor=pointer]:
+            - /url: /products/farshi-gharara-ivory-gold
+            - generic [ref=f16e99]: Imagery in preparation
+            - generic [ref=f16e102]:
+              - heading "Farshi Gharara - Ivory & Gold" [level=3] [ref=f16e103]
+              - paragraph [ref=f16e104]: chiffon · gota patti
+              - paragraph [ref=f16e105]: ₹64,500
+              - generic [ref=f16e106]:
+                - list "Modesty and coverage information" [ref=f16e107]:
+                  - listitem [ref=f16e108]:
+                    - generic [aria-hidden] [ref=f16e109]: ◆
+                    - generic [ref=f16e110]: "Modesty feature:"
+                    - text: Fully lined
+                  - listitem [ref=f16e111]:
+                    - generic [aria-hidden] [ref=f16e112]: ◆
+                    - generic [ref=f16e113]: "Modesty feature:"
+                    - text: Opaque fabric
+                  - listitem [ref=f16e114]:
+                    - generic [aria-hidden] [ref=f16e115]: ◆
+                    - generic [ref=f16e116]: "Modesty feature:"
+                    - text: No slit
+                  - listitem [ref=f16e117]: +1 more
+                - generic [ref=f16e118]:
+                  - generic [ref=f16e119]: Coverage
+                  - generic [ref=f16e120]: 73/100
+                  - generic [ref=f16e121]: high coverage
+  - contentinfo [ref=f16e124]:
+    - generic [ref=f16e125]:
+      - paragraph [ref=f16e126]: Ferasha
+      - paragraph [ref=f16e127]: Modest luxury, cut to order in Mumbai. Every garment publishes its coverage so you know what you are buying before it arrives.
+      - paragraph [ref=f16e128]: Prices in INR, inclusive of GST where applicable.
+  - button "Open Next.js Dev Tools" [ref=f16e134] [cursor=pointer]
+  - alert [ref=f16e138]
