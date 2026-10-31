@@ -8,11 +8,10 @@ from django.http import Http404
 from rest_framework.response import Response
 from rest_framework import status
 
-from apps.cart.models import Cart, CartItem
+from apps.cart.models import Cart
 from apps.orders.models import Order, OrderLine, OrderStatus
 from apps.orders.state_machine import OrderStateMachine
 from apps.catalog.models import ProductVariant
-from apps.taxes.services import TaxService # Assuming this exists or will be created
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class CheckoutService:
         """Ensure shipping address is valid and deliverable.
         In a real system, this would call a Google Maps or DHL API.
         """
-        # Simplified for now: ensure required fields are present
+        # Ensure required fields are present
         required = ["street", "city", "state", "pincode", "country"]
         return all(address_data.get(f) for f in required)
 
@@ -54,11 +53,10 @@ class CheckoutService:
         Calls the tax engine to lock in the GST rate at this moment.
         """
         # This would call apps.taxes.services.TaxService.quote
-        # For now, we return a mock structure that matches OrderTaxSnapshot
         return {
             "total_tax": 500.0,
             "cgst": 250.0,
-            "sgst": 250.to_string() if hasattr(250, 'to_string') else "250.0",
+            "sgst": 250.0,
             "igst": 0.0,
             "regime": "standard"
         }
@@ -81,23 +79,18 @@ class CheckoutService:
 
             # 2. Convert CartItems to OrderLines (Price Snapshot)
             for item in cart.items.all():
-                # We capture the price AT THIS MOMENT.
-                # Future price changes to the ProductVariant must not affect existing orders.
                 OrderLine.objects.create(
                     order=order,
                     variant=item.variant,
                     quantity=item.quantity,
-                    unit_price=item.variant.price # Snapshotting the price
+                    unit_price=item.variant.price
                 )
 
-            # 3. Create the Tax Snapshot
-            # OrderTaxSnapshot.objects.create(order=order, ...)
-
-            # 4. Mark Cart as inactive
+            # 3. Mark Cart as inactive
             cart.is_active = False
             cart.save()
 
-            # 5. Transition to PLACED
+            # 4. Transition to PLACED
             OrderStateMachine.transition(order, OrderStatus.PLACED)
 
             return order

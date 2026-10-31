@@ -30,6 +30,7 @@ urlpatterns = [
     path(API_V1, include("apps.reviews.urls", namespace="reviews")),
     path(API_V1, include("apps.media_assets.urls", namespace="media_assets")),
     path(API_V1, include("apps.cart.urls", namespace="cart")),
+    path(API_V1, include("apps.checkout.urls", namespace="checkout")),
     # OpenAPI 3.1: the single source of truth for the generated TypeScript client.
     path(f"{API_V1}schema/", SpectacularAPIView.as_view(), name="schema"),
 ]
