@@ -102,3 +102,97 @@ export interface TaxQuote {
   readonly regime: string;
   readonly notes: readonly string[];
 }
+
+/* ------------------------------------------------------------- checkout */
+
+/** Mirrors backend-core checkout.DeliveryAddressSerializer. */
+export interface DeliveryAddress {
+  readonly recipient_name: string;
+  readonly phone: string;
+  readonly line1: string;
+  readonly line2?: string;
+  readonly city: string;
+  /** ISO 3166-2:IN code without the "IN-" prefix, e.g. "MH". */
+  readonly state_code: string;
+  readonly postal_code: string;
+  readonly country_code: string;
+  readonly gstin?: string;
+}
+
+export interface CheckoutQuoteLine {
+  readonly variant_id: string;
+  readonly sku: string;
+  readonly product_name: string;
+  readonly variant_label: string;
+  readonly quantity: number;
+  readonly unit_price: string;
+  readonly line_total: string;
+}
+
+/** Server-priced. Money fields are decimal strings; never recompute them here. */
+export interface CheckoutQuote {
+  readonly currency: string;
+  readonly lines: readonly CheckoutQuoteLine[];
+  readonly subtotal: string;
+  readonly shipping_charge: string;
+  readonly tax: TaxQuote;
+  readonly tax_total: string;
+  readonly grand_total: string;
+}
+
+export interface PlacedOrder {
+  readonly order_number: string;
+  readonly status: string;
+  readonly grand_total: string;
+  readonly currency: string;
+}
+
+/* -------------------------------------------------------------- session */
+
+export interface SessionUser {
+  readonly id: string;
+  readonly email: string;
+  readonly full_name: string;
+}
+
+/** Mirrors backend-core users.RegistrationSerializer. */
+export interface Registration {
+  readonly full_name: string;
+  readonly email: string;
+  readonly phone?: string;
+  readonly password: string;
+  readonly password_confirm: string;
+  readonly accept_terms: boolean;
+}
+
+/* --------------------------------------------------------------- orders */
+
+export interface OrderLine {
+  readonly id: string;
+  readonly sku: string;
+  readonly product_name: string;
+  readonly variant_label: string;
+  readonly quantity: number;
+  readonly unit_price: string;
+  readonly gross: string;
+}
+
+/** Mirrors backend-core orders.OrderDetailSerializer (fields used here). */
+export interface OrderDetail {
+  readonly order_number: string;
+  readonly status: string;
+  readonly currency: string;
+  readonly supply_type: "intra_state" | "inter_state" | "export";
+  readonly shipping_address: DeliveryAddress;
+  readonly subtotal: string;
+  readonly shipping_charge: string;
+  readonly tax_total: string;
+  readonly grand_total: string;
+  readonly lines: readonly OrderLine[];
+  readonly tax_snapshot: {
+    readonly cgst_total: string;
+    readonly sgst_total: string;
+    readonly igst_total: string;
+  } | null;
+  readonly placed_at: string | null;
+}

@@ -20,10 +20,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.catalog.models import Product
+from apps.catalog.services import sync_face_coverage
+
 from .callbacks import parse_body, verify_signature
 from .models import MediaAsset, ModerationStatus
-from apps.catalog.models import Product
-from apps.catalog.enums import FaceCoverage
 
 logger = logging.getLogger(__name__)
 
@@ -127,22 +128,10 @@ class MediaCallbackView(APIView):
                 else:
                     asset.mark_failed(detail or "Processing failed.")
 
-                # Automation: Sync face modesty to the associated product.
-                # We only update if this asset is actually used by a product.
-                product_images = asset.product_images.all()
-                if product_images.exists():
-                    product = product_images.first().product
-
-                    # Logic: If this asset was blurred and verified, it is 'partial'.
-                    # If it was not detected (needs_review), it remains 'exposed'
-                    # until a human manually sets it to 'full'.
-                    if outcome == "approved" and body.get("blur_verified"):
-                        # This image is modest (blurred). We update the product if
-                        # it was previously 'exposed'.
-                        # Note: in a real system, we'd check all images of the product.
-                        if product.face_coverage == FaceCoverage.EXPOSED:
-                            product.face_coverage = FaceCoverage.PARTIAL
-                            product.save(update_fields=["face_coverage"])
+                # Any image's verdict can change a product's face-modesty
+                # badge, so re-derive it for every product using this asset.
+                for product in Product.objects.filter(images__asset=asset).distinct():
+                    sync_face_coverage(product)
 
             except DjangoValidationError as exc:
                 # The model refused the transition. That is the last line of

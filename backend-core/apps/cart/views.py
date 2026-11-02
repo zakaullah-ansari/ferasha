@@ -1,76 +1,86 @@
+"""Cart API. One active cart per authenticated customer."""
+
 from __future__ import annotations
 
-from rest_framework import viewsets, status
+from django.db.models import Prefetch
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from django.utils.deprecation import warn_redundant
 
+from . import services
 from .models import Cart, CartItem
-from .serializers import CartSerializer, CartItemSerializer
-from .services import CartService
+from .serializers import (
+    AddItemSerializer,
+    CartSerializer,
+    MergeSerializer,
+    SetQuantitySerializer,
+)
+
 
 class CartViewSet(viewsets.ViewSet):
-    """API for managing the shopping cart.
+    """GET the bag, add / set / remove lines, merge a guest bag at sign-in."""
 
-    Handles both authenticated users and guests via session keys.
-    """
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = (IsAuthenticated,)
 
-    def get_cart(self, request) -> Cart:
-        """Retrieve the cart for the current user or session."""
-        user = request.user if request.user.is_authenticated else None
-        session_key = request.session.session_key
-        return CartService.get_or_create_cart(user=user, session_key=session_key)
+    def _render(self, cart: Cart, *, status_code: int = status.HTTP_200_OK, **extra) -> Response:
+        # Re-read with the relations the serializer walks, so a bag of N lines
+        # costs a fixed number of queries rather than 3N.
+        cart = Cart.objects.prefetch_related(
+            Prefetch(
+                "items",
+                queryset=CartItem.objects.select_related("variant__product").order_by(
+                    "created_at"
+                ),
+            )
+        ).get(pk=cart.pk)
+        return Response({**CartSerializer(cart).data, **extra}, status=status_code)
 
     def list(self, request):
-        cart = self.get_cart(request)
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
+        return self._render(services.get_active_cart(request.user))
 
     def create(self, request):
-        """Add an item to the cart.
-        Payload: {"variant_id": "...", "quantity": 1}
-        """
-        variant_id = request.data.get("variant_id")
-        quantity = int(request.data.get("quantity", 1))
-
-        if not variant_id:
-            return Response({"detail": "variant_id is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        cart = self.get_cart(request)
+        payload = AddItemSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        cart = services.get_active_cart(request.user)
         try:
-            CartService.add_item(cart, variant_id, quantity)
-        except ValueError as exc:
+            services.add_item(cart, **payload.validated_data)
+        except services.CartError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return self._render(cart, status_code=status.HTTP_201_CREATED)
 
-        return Response(self.list(request))
-
-    @action(detail=False, methods=["post"])
-    def update_item(self, request):
-        """Update the quantity of a specific item."""
-        variant_id = request.data.get("variant_id")
-        quantity = int(request.data.get("quantity", 1))
-
-        cart = self.get_cart(request)
+    @action(detail=False, methods=["post"], url_path="set-quantity")
+    def set_quantity(self, request):
+        payload = SetQuantitySerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        cart = services.get_active_cart(request.user)
         try:
-            CartService.update_quantity(cart, variant_id, quantity)
-        except Exception as exc:
+            services.set_quantity(cart, **payload.validated_data)
+        except services.CartError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return self._render(cart)
 
-        return Response(self.list(request))
-
-    @action(detail=False, methods=["delete"], url_path="remove/(?P<variant_id>[^/.]+)")
+    @action(detail=False, methods=["delete"], url_path=r"items/(?P<variant_id>[0-9a-f-]{36})")
     def remove_item(self, request, variant_id=None):
-        """Remove an item from the cart."""
-        cart = self.get_cart(request)
-        if CartService.remove_item(cart, variant_id):
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({"detail": "Item not found in cart."}, status=status.HTTP_404_NOT_FOUND)
+        cart = services.get_active_cart(request.user)
+        if not services.remove_item(cart, variant_id):
+            return Response(
+                {"detail": "That item is not in your bag."}, status=status.HTTP_404_NOT_FOUND
+            )
+        return self._render(cart)
 
     @action(detail=False, methods=["post"])
     def clear(self, request):
-        """Empty the cart."""
-        cart = self.get_cart(request)
-        CartService.clear_cart(cart)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        cart = services.get_active_cart(request.user)
+        services.clear(cart)
+        return self._render(cart)
+
+    @action(detail=False, methods=["post"])
+    def merge(self, request):
+        payload = MergeSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        cart = services.get_active_cart(request.user)
+        skipped = services.merge_items(
+            cart, payload.validated_data["items"], replace=payload.validated_data["replace"]
+        )
+        return self._render(cart, skipped=skipped)

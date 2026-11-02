@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
+import { CartDrawer } from "@/components/CartDrawer";
+import { HeaderActions } from "@/components/HeaderActions";
+import { ATELIER, TAGLINE } from "@/lib/brand";
+
 import "./globals.css";
 
 /**
@@ -70,10 +74,13 @@ function SiteHeader() {
         <a href="/" className="font-display text-2xl tracking-tight text-foreground">
           Ferasha
         </a>
-        <ul className="flex items-center gap-6 text-sm text-muted-foreground">
-          <li><a href="/products" className="hover:text-foreground">Collection</a></li>
-          <li><a href="/products?supports_bespoke=true" className="hover:text-foreground">Bespoke</a></li>
-        </ul>
+        <div className="flex items-center gap-6">
+          <ul className="flex items-center gap-6 text-sm text-muted-foreground">
+            <li><a href="/products" className="hover:text-foreground">Collection</a></li>
+            <li><a href="/products?supports_bespoke=true" className="hover:text-foreground">Bespoke</a></li>
+          </ul>
+          <HeaderActions />
+        </div>
       </nav>
     </header>
   );
@@ -86,10 +93,26 @@ function SiteFooter() {
     <footer className="dark mt-24 bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-5 py-12">
         <p className="font-display text-xl">Ferasha</p>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">{TAGLINE}</p>
+        <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
           Modest luxury, cut to order in Mumbai. Every garment publishes its
           coverage so you know what you are buying before it arrives.
         </p>
+
+        <div className="mt-8 border-t border-border pt-6">
+          <p className="text-sm">
+            Tailored by <span className="font-display text-base">{ATELIER.name}</span>
+            <span className="text-muted-foreground"> · {ATELIER.motto}</span>
+          </p>
+          <address className="mt-2 text-sm not-italic leading-relaxed text-muted-foreground">
+            {ATELIER.addressLines.map((line) => (
+              <span key={line} className="block">{line}</span>
+            ))}
+            <a href={ATELIER.phoneHref} className="underline-offset-4 hover:text-foreground hover:underline">
+              {ATELIER.phoneDisplay}
+            </a>
+          </address>
+        </div>
         <p className="mt-6 text-xs text-muted-foreground">
           Prices in INR, inclusive of GST where applicable.
         </p>

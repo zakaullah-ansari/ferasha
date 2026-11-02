@@ -1,8 +1,13 @@
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Modesty } from '@/lib/api/types';
 
-interface CartItem {
+/**
+ * The bag, kept in the browser (localStorage) so guests can shop before
+ * signing in. Prices here are for display only: checkout re-prices every line
+ * on the server, and the server cart is replaced by this bag at that point.
+ */
+export interface CartItem {
   variantId: string;
   quantity: number;
   name: string;
@@ -15,10 +20,10 @@ interface CartItem {
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
-  isLoading: boolean;
 
   // Actions
   toggleDrawer: () => void;
+  setDrawerOpen: (open: boolean) => void;
   addItem: (item: CartItem) => void;
   removeItem: (variantId: string) => void;
   updateQuantity: (variantId: string, quantity: number) => void;
@@ -30,9 +35,9 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
-      isLoading: false,
 
       toggleDrawer: () => set((state) => ({ isOpen: !state.isOpen })),
+      setDrawerOpen: (open) => set({ isOpen: open }),
 
       addItem: (newItem) => set((state) => {
         const existingItem = state.items.find(i => i.variantId === newItem.variantId);
@@ -64,6 +69,22 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: 'ferasha-cart-storage',
+      // Persist the lines only; an open drawer must not survive a reload.
+      partialize: (state) => ({ items: state.items }),
     }
   )
 );
+
+/**
+ * True once the persisted bag has loaded in the browser. The server always
+ * renders an empty bag, so anything derived from it (the header count) must
+ * wait for this to avoid a hydration mismatch.
+ */
+export function useBagHydrated(): boolean {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  return hydrated;
+}
+
+export const selectItemCount = (state: { items: CartItem[] }) =>
+  state.items.reduce((sum, item) => sum + item.quantity, 0);

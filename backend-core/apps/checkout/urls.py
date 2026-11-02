@@ -1,10 +1,13 @@
-from django.urls import path, include
+from __future__ import annotations
+
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from apps.checkout.views import CheckoutViewSet
+
+from .views import CheckoutViewSet
 
 router = DefaultRouter()
-router.register(r'checkout', CheckoutViewSet, basename='checkout')
+router.register("checkout", CheckoutViewSet, basename="checkout")
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+app_name = "checkout"
+
+urlpatterns = [path("", include(router.urls))]

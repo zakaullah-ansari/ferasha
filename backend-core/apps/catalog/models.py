@@ -21,8 +21,8 @@ from apps.common.models import BaseModel
 
 from .enums import (
     BackCoverage,
-    FaceCoverage,
     Fabric,
+    FaceCoverage,
     GarmentType,
     NecklineModesty,
     Occasion,

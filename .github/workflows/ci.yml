@@ -1,106 +1,82 @@
-name: Elite CI Pipeline
+name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]
   pull_request:
-    branches: [ main, develop ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # 1. Linting & Static Analysis
-  static-analysis:
+  backend:
+    name: backend-core (ruff, migrations, pytest)
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Backend Lint (Flake8/Black)
-        run: |
-          pip install flake8 black
-          black --check backend-core/
-          flake8 backend-core/
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install Frontend Deps
-        run: pnpm install
-
-      - name: Frontend Lint & Typecheck
-        run: |
-          pnpm run lint
-          pnpm run typecheck
-
-  # 2. Backend Integration Tests
-  backend-tests:
-    needs: static-analysis
-    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-core
     services:
       postgres:
         image: postgres:16-alpine
         env:
           POSTGRES_DB: ferasha
           POSTGRES_USER: ferasha
-          POSTGRES_PASSWORD: ferasha_password
-        ports:
-          - 5432:5432
+          POSTGRES_PASSWORD: ferasha_ci_password
+        ports: ["5432:5432"]
         options: >-
-          --health-cmd pg_isready
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
+          --health-cmd "pg_isready -U ferasha -d ferasha"
+          --health-interval 5s --health-timeout 5s --health-retries 20
       redis:
         image: redis:7-alpine
-        ports:
-          - 6379:6379
+        ports: ["6379:6379"]
         options: >-
           --health-cmd "redis-cli ping"
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
-
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings
+      DJANGO_DEBUG: "1"
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-used-anywhere-else
+      DATABASE_URL: postgresql://ferasha:ferasha_ci_password@localhost:5432/ferasha
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SIGNING_KEY: ci-only-jwt-signing-key-at-least-thirty-two-bytes
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"  # matches backend-core/Dockerfile
+          cache: pip
+          cache-dependency-path: backend-core/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - name: Migrations are committed
+        run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py collectstatic --noinput
+      - run: pytest -q
 
-      - name: Install Backend Deps
-        run: |
-          pip install -r backend-core/requirements.txt
-          pip install pytest pytest-django
-
-      - name: Run Backend Tests
-        env:
-          DATABASE_URL: postgresql://ferasha:ferasha_password@localhost:5432/ferasha
-          REDIS_URL: redis://localhost:6379/0
-          DJANGO_SECRET_KEY: ci-secret-key
-          DJANGO_DEBUG: "1"
-        run: |
-          cd backend-core
-          python manage.py migrate
-          pytest tests/
-
-  # 3. Frontend Unit Tests
-  frontend-tests:
-    needs: static-analysis
+  ai-engine:
+    name: ai-engine (pytest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      # The compose `ai-tests` service builds the Dockerfile `test` target and
+      # mounts the compose file and .env.example the config tests read.
+      - run: docker compose --profile test run --rm ai-tests
+
+  frontend:
+    name: frontend (typecheck, unit tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
-      - name: Install Frontend Deps
-        run: pnpm install
-      - name: Run Frontend Tests
-        run: pnpm run test
+          node-version: "22"  # matches frontend/Dockerfile
+      # pnpm version comes from package.json "packageManager".
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      # Unit project only; Storybook browser tests need Playwright browsers.
+      - run: pnpm test

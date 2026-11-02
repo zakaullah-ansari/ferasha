@@ -1,46 +1,66 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from rest_framework import serializers
+
 from .models import Cart, CartItem
-from apps.catalog.models import ProductVariant
+
 
 class CartItemSerializer(serializers.ModelSerializer):
-    variant_details = serializers.SerializerMethodField()
+    variant_id = serializers.UUIDField(source="variant.id", read_only=True)
+    sku = serializers.CharField(source="variant.sku", read_only=True)
+    product_name = serializers.CharField(source="variant.product.name", read_only=True)
+    product_slug = serializers.CharField(source="variant.product.slug", read_only=True)
+    size = serializers.CharField(source="variant.size", read_only=True)
+    colour = serializers.CharField(source="variant.colour", read_only=True)
+    unit_price = serializers.DecimalField(
+        source="variant.price", max_digits=12, decimal_places=2, read_only=True
+    )
+    line_total = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ("id", "variant", "quantity", "variant_details")
+        fields = (
+            "variant_id", "sku", "product_name", "product_slug",
+            "size", "colour", "quantity", "unit_price", "line_total",
+        )
+        read_only_fields = fields
 
-    def get_variant_details(self, obj):
-        variant = obj.variant
-        return {
-            "sku": variant.sku,
-            "colour": variant.colour,
-            "size": variant.size,
-            "price": variant.price, # Assuming price is a property/field
-        }
+    def get_line_total(self, obj: CartItem) -> str:
+        return str(obj.variant.price * obj.quantity)
+
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
-    total_items = serializers.IntegerField(read_only=True)
-    total_price = serializers.DecimalField(
-        max_digits=12, decimal_places=2, read_only=True
-    )
+    total_items = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ("id", "items", "total_items", "total_price")
+        fields = ("items", "total_items", "subtotal")
+        read_only_fields = fields
 
-    def get_total_items(self, obj):
+    def get_total_items(self, obj: Cart) -> int:
         return sum(item.quantity for item in obj.items.all())
 
-    def get_total_price(self, obj):
-        # Note: In a real system, we would use a specialized
-        # lazy-loading sum query to avoid N+1 here.
-        total = 0
-        for item in obj.items.all():
-            # We access the price via the variant
-            # Since ProductVariant.price is a property in the model,
-            # we handle it here.
-            total += item.variant.price * item.quantity
-        return total
+    def get_subtotal(self, obj: Cart) -> str:
+        total = sum(
+            (item.variant.price * item.quantity for item in obj.items.all()), Decimal("0.00")
+        )
+        return str(total)
+
+
+class AddItemSerializer(serializers.Serializer):
+    variant_id = serializers.UUIDField()
+    quantity = serializers.IntegerField(min_value=1, default=1)
+
+
+class SetQuantitySerializer(serializers.Serializer):
+    variant_id = serializers.UUIDField()
+    quantity = serializers.IntegerField(min_value=0)
+
+
+class MergeSerializer(serializers.Serializer):
+    items = AddItemSerializer(many=True, allow_empty=True)
+    replace = serializers.BooleanField(default=False)

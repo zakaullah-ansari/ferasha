@@ -1,105 +1,73 @@
+"""Checkout API: quote, then place.
+
+* ``POST /checkout/quote/``       - price the bag for an address. No side effects.
+* ``POST /checkout/place-order/`` - create the order. Requires Idempotency-Key.
+"""
+
 from __future__ import annotations
 
-import logging
-from typing import Any
-from rest_framework import viewsets, status
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import JSONParser
+from rest_framework.response import Response
 
-from .services import CheckoutService
-from apps.cart.models import Cart
+from apps.common.idempotency import HEADER, idempotent
 from apps.orders.models import Order
+from apps.orders.serializers import OrderDetailSerializer
 
-logger = logging.getLogger(__name__)
+from . import services
+from .serializers import CheckoutRequestSerializer
+
 
 class CheckoutViewSet(viewsets.ViewSet):
-    """
-    The Checkout Pipeline.
-    Coordinates the transition from a Cart to a locked Order.
+    permission_classes = (IsAuthenticated,)
 
-    Flow:
-    1. POST /validate-address/ -> returns validity
-    2. POST /calculate-shipping/ -> returns cost
-    3. POST /quote-tax/ -> returns final tax snapshot
-    4. POST /place-order/ -> creates Order and clears Cart
-    """
-    permission_classes = [IsAuthenticated]
+    def _validated(self, request) -> dict:
+        payload = CheckoutRequestSerializer(data=request.data, context={"request": request})
+        payload.is_valid(raise_exception=True)
+        return payload.validated_data
 
-    def _get_active_cart(self, request) -> Cart:
-        """Retrieve the active cart for the authenticated user."""
-        cart = Cart.objects.filter(user=request.user, is_active=True).first()
-        if not cart:
-            return None
-        return cart
-
+    @extend_schema(summary="Price the bag for a delivery address", tags=["checkout"])
     @action(detail=False, methods=["post"])
-    def validate_address(self, request):
-        """Step 1: Validate the shipping address."""
-        address_data = request.data
-        cart = self._get_active_cart(request)
-        if not cart:
-            return Response({"detail": "No active cart found."}, status=status.HTTP_400_BAD_REQUEST)
-
-        is_valid = CheckoutService.validate_address(cart, address_data)
-        return Response({"valid": is_valid}, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["post"])
-    def calculate_shipping(self, request):
-        """Step 2: Calculate shipping costs based on address."""
-        address_data = request.data
-        cart = self._get_active_cart(request)
-        if not cart:
-            return Response({"detail": "No active cart found."}, status=status.HTTP_400_BAD_REQUEST)
-
-        cost = CheckoutService.calculate_shipping(cart, address_data)
-        return Response({"shipping_cost": cost}, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["post"])
-    def quote_tax(self, request):
-        """Step 3: Lock in the final tax quote."""
-        address_data = request.data
-        cart = self._get_active_cart(request)
-        if not cart:
-            return Response({"detail": "No active cart found."}, status=status.HTTP_400_BAD_REQUEST)
-
-        tax_quote = CheckoutService.quote_final_tax(cart, address_data)
-        return Response(tax_quote, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["post"])
-    def place_order(self, request):
-        """Step 4: Convert Cart to Order.
-        Expects: address_data, shipping_cost, tax_quote.
-        """
-        data = request.data
-        address_data = data.get("address")
-        shipping_cost = data.get("shipping_cost")
-        tax_quote = data.get("tax_quote")
-
-        if not all([address_data, shipping_cost, tax_quote]):
-            return Response(
-                {"detail": "Missing required checkout data (address, shipping, or tax)."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        cart = self._get_active_cart(request)
-        if not cart:
-            return Response({"detail": "No active cart found."}, status=status.HTTP_400_BAD_REQUEST)
-
+    def quote(self, request):
+        data = self._validated(request)
         try:
-            order = CheckoutService.place_order(
-                user=request.user,
-                cart=cart,
-                address_data=address_data,
-                shipping_cost=float(shipping_cost),
-                tax_quote=tax_quote
-            )
-            return Response({
-                "order_id": order.id,
-                "status": order.status,
-                "detail": "Order placed successfully."
-            }, status=status.HTTP_201_CREATED)
-        except Exception as exc:
-            logger.error("Order placement failed: %s", str(exc))
+            priced = services.quote(request.user, data["address"])
+        except services.CheckoutError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(priced.as_dict())
+
+    @extend_schema(
+        summary="Place the order",
+        tags=["checkout"],
+        parameters=[OpenApiParameter(HEADER, location="header", required=True)],
+    )
+    @action(detail=False, methods=["post"], url_path="place-order")
+    @idempotent("checkout.place-order")
+    def place_order(self, request):
+        data = self._validated(request)
+        try:
+            order = services.place_order(
+                request.user,
+                data["address"],
+                expected_grand_total=data.get("expected_grand_total"),
+                customer_notes=data["customer_notes"],
+            )
+        except services.PriceChanged as exc:
+            return Response(
+                {"detail": str(exc), "quote": exc.quote.as_dict()},
+                status=status.HTTP_409_CONFLICT,
+            )
+        except services.CheckoutError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = (
+            Order.objects.select_related("tax_snapshot", "customer")
+            .prefetch_related("lines__tailoring_spec", "events")
+            .get(pk=order.pk)
+        )
+        return Response(
+            OrderDetailSerializer(order, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )

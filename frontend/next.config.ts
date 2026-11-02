@@ -9,15 +9,18 @@ const previewOrigins = ["*.e2b.app", "*.e2b.dev", "localhost:3000"];
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
-  // Browser code calls relative /api/... paths; Next proxies them to Django
-  // server-side. This is what keeps "localhost:8000" out of the client bundle,
-  // where it would resolve to the user's own machine rather than the API.
+  // Django's URLs end in "/". Next's default 308s "/api/v1/auth/me/" to the
+  // slashless form before the proxy route runs, and Django cannot redirect a
+  // POST back - so every browser API call would fail.
+  skipTrailingSlashRedirect: true,
+
+  // Browser code calls relative /api/v1/... paths, served by the proxy route
+  // in app/api/v1/[...path] (which attaches the session). Media is public and
+  // needs no session, so a plain rewrite suffices. Either way "localhost:8000"
+  // never reaches the client bundle, where it would mean the user's machine.
   async rewrites() {
     const backend = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
-    return [
-      { source: "/api/v1/:path*", destination: `${backend}/api/v1/:path*` },
-      { source: "/media/:path*", destination: `${backend}/media/:path*` },
-    ];
+    return [{ source: "/media/:path*", destination: `${backend}/media/:path*` }];
   },
 
   allowedDevOrigins: previewOrigins,

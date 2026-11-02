@@ -21,6 +21,7 @@ from .enums import (
     SLEEVE_ORDER,
     SLIT_ORDER,
     BackCoverage,
+    FaceCoverage,
     NecklineModesty,
     SleeveCoverage,
     SlitCoverage,
@@ -88,7 +89,8 @@ class ModestyProfile:
     sleeve_coverage: str
     neckline_modesty: str
     back_coverage: str
-    face_coverage: str
+    #: Defaults to the model's own default: no face-modesty claim without evidence.
+    face_coverage: str = FaceCoverage.EXPOSED
     requires_slip: bool = False
     is_sheer_overlay_only: bool = False
 
@@ -150,7 +152,7 @@ def derive_modesty(profile: ModestyProfile) -> ModestyAssessment:
     if profile.back_coverage in (BackCoverage.MODERATE, BackCoverage.FULL):
         badges.append(ModestyBadge.COVERED_BACK)
 
-    if profile.face_coverage in ("partial", "full"):
+    if profile.face_coverage in (FaceCoverage.PARTIAL, FaceCoverage.FULL):
         badges.append(ModestyBadge.FACE_MODEST)
 
     # FULL_COVERAGE is the strongest claim and requires every dimension to

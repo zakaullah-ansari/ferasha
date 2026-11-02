@@ -16,6 +16,9 @@ x-django-env: &django-env
   AI_ENGINE_URL: http://ai-engine:8001
   AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+  RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+  RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+  RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
 
 services:
   postgres:
@@ -154,6 +157,7 @@ services:
       BACKEND_INTERNAL_URL: http://backend-core:8000
       AI_ENGINE_URL: http://ai-engine:8001
       NEXT_TELEMETRY_DISABLED: "1"
+      CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
     volumes:
       - ./frontend:/app
       - /app/node_modules
