@@ -143,17 +143,17 @@
   }
 
   .dark .glass-ultra-thin {
-    @apply bg-obsidian/50 backdrop-blur-[12px] backdrop-saturate-[1.5];
+    @apply bg-ink-900/50 backdrop-blur-[12px] backdrop-saturate-[1.5];
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .dark .glass-regular {
-    @apply bg-obsidian/72 backdrop-blur-[28px] backdrop-saturate-[1.9];
+    @apply bg-ink-900/72 backdrop-blur-[28px] backdrop-saturate-[1.9];
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .dark .glass-thick {
-    @apply bg-obsidian/82 backdrop-blur-[40px] backdrop-saturate-[2.0];
+    @apply bg-ink-900/82 backdrop-blur-[40px] backdrop-saturate-[2.0];
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
