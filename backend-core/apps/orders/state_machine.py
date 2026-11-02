@@ -12,6 +12,8 @@ from __future__ import annotations
 from django.db import transaction
 from django.utils import timezone
 
+from apps.catalog.services import release_stock
+
 from .models import Order, OrderEvent, OrderStatus
 
 S = OrderStatus
@@ -97,6 +99,12 @@ def transition_order(
 
     if target == S.REFUNDED and current != S.RETURNED:  # pragma: no cover - defensive
         raise IllegalTransition("A refund requires the goods to have been returned first.")
+
+    if target == S.CANCELLED and current in STOCK_COMMITTED_STATUSES:
+        # Stock was reserved when the order was placed. Without this a
+        # cancelled piece would show as sold out until someone noticed.
+        for line in locked.lines.filter(variant__isnull=False):
+            release_stock(line.variant_id, line.quantity)
 
     locked.status = target
     update_fields = ["status", "updated_at"]
