@@ -11,7 +11,15 @@
  * because a relative path has no origin to resolve against there.
  */
 
-import type { Paginated, ProductDetail, ProductSummary, TaxQuote } from "./types";
+import type {
+  CheckoutQuote,
+  DeliveryAddress,
+  Paginated,
+  PlacedOrder,
+  ProductDetail,
+  ProductSummary,
+  TaxQuote,
+} from "./types";
 
 /** Server-side origin. Never shipped to the browser. */
 const SERVER_ORIGIN = process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000";
@@ -28,6 +36,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly path: string,
     message: string,
+    /** Only set for 4xx from endpoints whose messages are customer-safe. */
+    readonly body?: Readonly<Record<string, unknown>>,
   ) {
     super(message);
     this.name = "ApiError";
@@ -64,6 +74,45 @@ async function get<T>(path: string, options: RequestOptions = {}): Promise<T> {
   return (await response.json()) as T;
 }
 
+interface AuthedPostOptions {
+  readonly accessToken: string;
+  /** Sent as Idempotency-Key. Reuse the same key when retrying one attempt. */
+  readonly idempotencyKey?: string;
+}
+
+/**
+ * POST to an authenticated endpoint. Checkout and payment endpoints return
+ * customer-safe 4xx messages (stock, price changes), so for those the body is
+ * kept on the error; 5xx bodies are still never surfaced.
+ */
+async function authedPost<T>(
+  path: string,
+  body: unknown,
+  { accessToken, idempotencyKey }: AuthedPostOptions,
+): Promise<T> {
+  const response = await fetch(url(path), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const detail =
+      response.status < 500
+        ? ((await response.json().catch(() => undefined)) as Record<string, unknown> | undefined)
+        : undefined;
+    const message =
+      typeof detail?.detail === "string" ? detail.detail : `Request to ${path} failed.`;
+    throw new ApiError(response.status, path, message, detail);
+  }
+  return (await response.json()) as T;
+}
+
 export const api = {
   listProducts(
     params: Readonly<Record<string, string | number | undefined>> = {},
@@ -92,5 +141,28 @@ export const api = {
       throw new ApiError(response.status, "/api/v1/tax/quote/", "Tax quote failed.");
     }
     return (await response.json()) as TaxQuote;
+  },
+
+  checkout: {
+    /** Price the signed-in customer's bag for an address. No side effects. */
+    quote(address: DeliveryAddress, auth: AuthedPostOptions): Promise<CheckoutQuote> {
+      return authedPost<CheckoutQuote>("/api/v1/checkout/quote/", { address }, auth);
+    },
+
+    /**
+     * Place the order. `expectedGrandTotal` is the total the customer saw; a
+     * change since then is refused with 409 and a fresh quote on `error.body`.
+     */
+    placeOrder(
+      address: DeliveryAddress,
+      expectedGrandTotal: string,
+      auth: AuthedPostOptions & { readonly idempotencyKey: string },
+    ): Promise<PlacedOrder> {
+      return authedPost<PlacedOrder>(
+        "/api/v1/checkout/place-order/",
+        { address, expected_grand_total: expectedGrandTotal },
+        auth,
+      );
+    },
   },
 };

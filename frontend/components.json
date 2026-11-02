@@ -21,5 +21,8 @@
   },
   "menuColor": "inverted-translucent",
   "menuAccent": "subtle",
-  "registries": {}
+  "registries": {
+    "@reui": "https://reui.io/r/{style}/{name}.json",
+    "@magicui": "https://magicui.design/r/{name}"
+  }
 }
