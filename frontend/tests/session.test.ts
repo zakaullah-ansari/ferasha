@@ -85,6 +85,13 @@ describe("return path after sign-in", () => {
     ["/\n/evil.example", "/"],
     ["/\r/evil.example", "/"],
     ["/\\/evil.example", "/"],
+    // Dot segments that normalise to a protocol-relative "//evil.example".
+    ["/.//evil.example", "/"],
+    ["/x/..//evil.example", "/"],
+    ["/%2e//evil.example", "/"],
+    // An encoded slash stays literal in the path: harmless, kept as-is.
+    ["/%2F/evil.example", "/%2F/evil.example"],
+    ["/orders/../checkout", "/checkout"],
     ["/checkout#review", "/checkout#review"],
   ])("%j -> %s", (input, expected) => {
     expect(safeNextPath(input)).toBe(expected);

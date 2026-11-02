@@ -54,5 +54,9 @@ export function safeNextPath(next: string | string[] | undefined): string {
     return "/";
   }
   if (url.origin !== base) return "/";
-  return `${url.pathname}${url.search}${url.hash}`;
+  // Check the string actually returned, after normalisation: dot segments
+  // ("/.//evil.com", "/x/..//evil.com", "/%2e//evil.com") resolve inside the
+  // placeholder origin yet normalise to "//evil.com" - protocol-relative.
+  const path = `${url.pathname}${url.search}${url.hash}`;
+  return path.startsWith("//") ? "/" : path;
 }
