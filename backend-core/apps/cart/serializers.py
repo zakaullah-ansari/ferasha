@@ -63,3 +63,4 @@ class SetQuantitySerializer(serializers.Serializer):
 
 class MergeSerializer(serializers.Serializer):
     items = AddItemSerializer(many=True, allow_empty=True)
+    replace = serializers.BooleanField(default=False)

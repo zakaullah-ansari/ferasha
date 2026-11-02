@@ -126,13 +126,21 @@ def clear(cart: Cart) -> None:
 
 
 @transaction.atomic
-def merge_items(cart: Cart, items: Iterable[dict[str, Any]]) -> list[str]:
+def merge_items(
+    cart: Cart, items: Iterable[dict[str, Any]], *, replace: bool = False
+) -> list[str]:
     """Fold a guest basket into the customer's cart at sign-in.
+
+    With ``replace`` the server cart becomes exactly ``items`` - what the
+    storefront sends at checkout, so a bag left over from an earlier session
+    cannot slip into the order. Both happen in one transaction.
 
     Unavailable lines are skipped rather than failing the whole merge - losing
     one sold-out item is better than losing the bag. Returns the skipped ids so
     the storefront can tell the customer.
     """
+    if replace:
+        clear(cart)
     skipped: list[str] = []
     for entry in items:
         variant_id = entry.get("variant_id")

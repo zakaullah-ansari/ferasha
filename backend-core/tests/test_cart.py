@@ -117,3 +117,17 @@ class TestCartApi:
         auth_client.post(CART, {"variant_id": str(variant.pk)})
 
         assert other_client.get(CART).data["items"] == []
+
+    def test_replace_makes_the_server_bag_exactly_the_client_bag(self, auth_client, variant):
+        leftover = make_variant(stock_quantity=3)
+        auth_client.post(CART, {"variant_id": str(leftover.pk)})
+
+        response = auth_client.post(
+            MERGE,
+            {"items": [{"variant_id": str(variant.pk), "quantity": 2}], "replace": True},
+            format="json",
+        )
+
+        assert [(line["sku"], line["quantity"]) for line in response.data["items"]] == [
+            (variant.sku, 2)
+        ]

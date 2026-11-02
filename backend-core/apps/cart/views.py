@@ -80,5 +80,7 @@ class CartViewSet(viewsets.ViewSet):
         payload = MergeSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         cart = services.get_active_cart(request.user)
-        skipped = services.merge_items(cart, payload.validated_data["items"])
+        skipped = services.merge_items(
+            cart, payload.validated_data["items"], replace=payload.validated_data["replace"]
+        )
         return self._render(cart, skipped=skipped)
