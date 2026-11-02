@@ -1,114 +1,131 @@
 "use client";
 
-import { cn } from '@/lib/cn';
-import { formatINR } from '@/lib/format';
-import { useCartStore } from '@/store/useCartStore';
-import { X, Plus, Minus, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Minus, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 
-export function CartDrawer({ className }: { className?: string }) {
-  const { items, isOpen, toggleDrawer, updateQuantity, removeItem } = useCartStore();
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { formatINR } from "@/lib/format";
+import { selectItemCount, useCartStore } from "@/store/useCartStore";
 
-  if (!isOpen) return null;
-
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+/** The bag. A shadcn Sheet: focus trap, Escape and scroll lock come with it. */
+export function CartDrawer() {
+  const items = useCartStore((state) => state.items);
+  const isOpen = useCartStore((state) => state.isOpen);
+  const setDrawerOpen = useCartStore((state) => state.setDrawerOpen);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const count = useCartStore(selectItemCount);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-        onClick={toggleDrawer}
-      />
+    <Sheet open={isOpen} onOpenChange={setDrawerOpen}>
+      <SheetContent className="w-full sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle className="font-display text-xl">Your bag</SheetTitle>
+          <SheetDescription>
+            {count === 0 ? "Nothing here yet." : `${count} ${count === 1 ? "piece" : "pieces"}`}
+          </SheetDescription>
+        </SheetHeader>
 
-      {/* Drawer Content */}
-      <div className={cn(
-        "relative w-full max-w-md h-full bg-background border-l shadow-2xl transition-transform duration-300 ease-in-out",
-        className
-      )}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <h2 className="font-display text-xl tracking-tight">Your Selection</h2>
-            <Button variant="ghost" size="icon" onClick={toggleDrawer} aria-label="Close bag">
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-
-          {/* Items List */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-                <p className="text-muted-foreground italic">Your cart is currently empty.</p>
-                <Button onClick={toggleDrawer} variant="outline">Continue Shopping</Button>
-              </div>
-            ) : (
-              items.map((item) => (
-                <div key={item.variantId} className="flex gap-4 group">
-                  <div className="h-20 w-20 rounded-lg overflow-hidden bg-muted shrink-0">
-                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+        <div className="flex-1 overflow-y-auto px-4">
+          {items.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+              <p className="text-muted-foreground">Your bag is empty.</p>
+              <Link
+                href="/products"
+                onClick={() => setDrawerOpen(false)}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                Browse the collection
+              </Link>
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {items.map((item) => (
+                <li key={item.variantId} className="flex gap-4 py-4">
+                  <div className="size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    {item.image && (
+                      // Media is served by the API's own image pipeline.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.image} alt="" className="size-full object-cover" />
+                    )}
                   </div>
-                  <div className="flex-1 flex flex-col justify-between py-1">
-                    <div className="flex justify-between items-start">
+                  <div className="flex flex-1 flex-col justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-sm font-medium leading-none">{item.name}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">{item.colour} • {item.size}</p>
+                        <p className="font-medium leading-snug">{item.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {item.colour} · {item.size}
+                        </p>
                       </div>
-                      <p className="text-sm font-medium tabular-nums">{formatINR(item.price)}</p>
+                      <p className="tabular-nums">{formatINR(item.price * item.quantity)}</p>
                     </div>
-
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center border rounded-full px-1">
-                        <button
-                          type="button"
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="flex items-center rounded-full border">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           aria-label={`Decrease quantity of ${item.name}`}
+                          disabled={item.quantity <= 1}
                           onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                          className="p-1 hover:bg-muted rounded-full transition-colors"
                         >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="text-xs w-8 text-center font-medium tabular-nums">
+                          <Minus />
+                        </Button>
+                        <span className="w-8 text-center text-xs tabular-nums" aria-live="polite">
                           {item.quantity}
                         </span>
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           aria-label={`Increase quantity of ${item.name}`}
                           onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                          className="p-1 hover:bg-muted rounded-full transition-colors"
                         >
-                          <Plus className="h-3 w-3" />
-                        </button>
+                          <Plus />
+                        </Button>
                       </div>
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         aria-label={`Remove ${item.name} from bag`}
                         onClick={() => removeItem(item.variantId)}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        <Trash2 />
+                      </Button>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="p-6 border-t bg-muted/30 space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Subtotal ({totalItems} items)</span>
-              <span className="text-lg font-display font-medium tabular-nums">
-                {formatINR(totalPrice)}
-              </span>
-            </div>
-            <Button className="w-full py-6 text-md font-medium tracking-wide" size="lg">
-              Proceed to Checkout
-            </Button>
-          </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </div>
-    </div>
+
+        {items.length > 0 && (
+          <SheetFooter className="border-t">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Subtotal</span>
+              <span className="font-display text-xl tabular-nums">{formatINR(subtotal)}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Delivery and GST are calculated at checkout.
+            </p>
+            <Link
+              href="/checkout"
+              onClick={() => setDrawerOpen(false)}
+              className={buttonVariants({ size: "lg", className: "w-full" })}
+            >
+              Proceed to checkout
+            </Link>
+          </SheetFooter>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }

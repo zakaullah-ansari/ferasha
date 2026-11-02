@@ -3,10 +3,9 @@
 import { Check, Loader2 } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 
+import { FormField, fieldErrors as drfFieldErrors } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import {
   Stepper,
@@ -70,8 +69,7 @@ const EMPTY_ADDRESS: DeliveryAddress = {
 };
 
 interface CheckoutStepperProps {
-  /** JWT for the signed-in customer. Checkout is per-account. */
-  readonly accessToken: string;
+  /** Signed-in only: the session cookie authenticates every call. */
   readonly onPlaced: (order: PlacedOrder) => void;
 }
 
@@ -79,13 +77,9 @@ interface CheckoutStepperProps {
 function addressErrors(error: unknown): Partial<Record<AddressField, string>> {
   if (!(error instanceof ApiError)) return {};
   const nested = error.body?.address;
-  if (!nested || typeof nested !== "object") return {};
-  return Object.fromEntries(
-    Object.entries(nested as Record<string, unknown>).map(([field, messages]) => [
-      field,
-      Array.isArray(messages) ? String(messages[0]) : String(messages),
-    ]),
-  );
+  return nested && typeof nested === "object"
+    ? drfFieldErrors(nested as Record<string, unknown>)
+    : {};
 }
 
 function errorMessage(error: unknown): string {
@@ -93,7 +87,7 @@ function errorMessage(error: unknown): string {
   return "Something went wrong on our side. Please try again in a moment.";
 }
 
-export function CheckoutStepper({ accessToken, onPlaced }: CheckoutStepperProps) {
+export function CheckoutStepper({ onPlaced }: CheckoutStepperProps) {
   const [step, setStep] = useState(1);
   const [address, setAddress] = useState<DeliveryAddress>(EMPTY_ADDRESS);
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
@@ -116,7 +110,7 @@ export function CheckoutStepper({ accessToken, onPlaced }: CheckoutStepperProps)
     setError(null);
     setFieldErrors({});
     try {
-      const priced = await api.checkout.quote(address, { accessToken });
+      const priced = await api.checkout.quote(address);
       setQuote(priced);
       attemptKey.current = crypto.randomUUID();
       setStep(2);
@@ -133,10 +127,7 @@ export function CheckoutStepper({ accessToken, onPlaced }: CheckoutStepperProps)
     setBusy(true);
     setError(null);
     try {
-      const order = await api.checkout.placeOrder(address, quote.grand_total, {
-        accessToken,
-        idempotencyKey: attemptKey.current,
-      });
+      const order = await api.checkout.placeOrder(address, quote.grand_total, attemptKey.current);
       onPlaced(order);
     } catch (caught) {
       const fresh = caught instanceof ApiError ? caught.body?.quote : undefined;
@@ -191,33 +182,23 @@ export function CheckoutStepper({ accessToken, onPlaced }: CheckoutStepperProps)
             </CardHeader>
             <CardContent>
               <form onSubmit={requestQuote} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {FIELDS.map((field) => {
-                  const id = `checkout-${field.name}`;
-                  const fieldError = fieldErrors[field.name];
-                  return (
-                    <div key={field.name} className={field.wide ? "grid gap-2 sm:col-span-2" : "grid gap-2"}>
-                      <Label htmlFor={id}>{field.label}</Label>
-                      <Input
-                        id={id}
-                        name={field.name}
-                        value={address[field.name] ?? ""}
-                        onChange={(event) => setField(field.name, event.target.value)}
-                        autoComplete={field.autoComplete}
-                        required={field.required}
-                        inputMode={field.inputMode}
-                        pattern={field.pattern}
-                        placeholder={field.placeholder}
-                        aria-invalid={fieldError ? true : undefined}
-                        aria-describedby={fieldError ? `${id}-error` : undefined}
-                      />
-                      {fieldError && (
-                        <p id={`${id}-error`} className="text-sm text-destructive">
-                          {fieldError}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
+                {FIELDS.map((field) => (
+                  <div key={field.name} className={field.wide ? "sm:col-span-2" : undefined}>
+                    <FormField
+                      id={`checkout-${field.name}`}
+                      name={field.name}
+                      label={field.label}
+                      value={address[field.name] ?? ""}
+                      onChange={(event) => setField(field.name, event.target.value)}
+                      autoComplete={field.autoComplete}
+                      required={field.required}
+                      inputMode={field.inputMode}
+                      pattern={field.pattern}
+                      placeholder={field.placeholder}
+                      error={fieldErrors[field.name]}
+                    />
+                  </div>
+                ))}
 
                 {error && step === 1 && (
                   <p role="alert" className="text-sm text-destructive sm:col-span-2">

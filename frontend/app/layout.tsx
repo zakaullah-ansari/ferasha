@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 
 import { CartDrawer } from "@/components/CartDrawer";
+import { HeaderActions } from "@/components/HeaderActions";
+import { ATELIER, TAGLINE } from "@/lib/brand";
 
 import "./globals.css";
 
@@ -72,10 +74,13 @@ function SiteHeader() {
         <a href="/" className="font-display text-2xl tracking-tight text-foreground">
           Ferasha
         </a>
-        <ul className="flex items-center gap-6 text-sm text-muted-foreground">
-          <li><a href="/products" className="hover:text-foreground">Collection</a></li>
-          <li><a href="/products?supports_bespoke=true" className="hover:text-foreground">Bespoke</a></li>
-        </ul>
+        <div className="flex items-center gap-6">
+          <ul className="flex items-center gap-6 text-sm text-muted-foreground">
+            <li><a href="/products" className="hover:text-foreground">Collection</a></li>
+            <li><a href="/products?supports_bespoke=true" className="hover:text-foreground">Bespoke</a></li>
+          </ul>
+          <HeaderActions />
+        </div>
       </nav>
     </header>
   );
@@ -88,7 +93,7 @@ function SiteFooter() {
     <footer className="dark mt-24 bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-5 py-12">
         <p className="font-display text-xl">Ferasha</p>
-        <p className="mt-1 text-sm text-muted-foreground">Discover your ethnic wardrobe</p>
+        <p className="mt-1 text-sm text-muted-foreground">{TAGLINE}</p>
         <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
           Modest luxury, cut to order in Mumbai. Every garment publishes its
           coverage so you know what you are buying before it arrives.
@@ -96,16 +101,15 @@ function SiteFooter() {
 
         <div className="mt-8 border-t border-border pt-6">
           <p className="text-sm">
-            Tailored by <span className="font-display text-base">Kausar Dezine Studio</span>
-            <span className="text-muted-foreground"> · Fashion with Dignity</span>
+            Tailored by <span className="font-display text-base">{ATELIER.name}</span>
+            <span className="text-muted-foreground"> · {ATELIER.motto}</span>
           </p>
           <address className="mt-2 text-sm not-italic leading-relaxed text-muted-foreground">
-            Shop No. C/01, 187, Al-Shams Apt., near Karthika High School,
-            <br />
-            New Hall Road, Kurla (W), Mumbai 400070
-            <br />
-            <a href="tel:+919819995222" className="underline-offset-4 hover:text-foreground hover:underline">
-              +91 98199 95222
+            {ATELIER.addressLines.map((line) => (
+              <span key={line} className="block">{line}</span>
+            ))}
+            <a href={ATELIER.phoneHref} className="underline-offset-4 hover:text-foreground hover:underline">
+              {ATELIER.phoneDisplay}
             </a>
           </address>
         </div>

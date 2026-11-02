@@ -102,7 +102,7 @@ async function fillAddressAndContinue(user: ReturnType<typeof userEvent.setup>) 
 function setup() {
   const onPlaced = vi.fn();
   const user = userEvent.setup();
-  render(<CheckoutStepper accessToken="test-token" onPlaced={onPlaced} />);
+  render(<CheckoutStepper onPlaced={onPlaced} />);
   return { user, onPlaced };
 }
 
@@ -115,7 +115,8 @@ describe("CheckoutStepper", () => {
 
     const quoteCall = requestTo(fetchMock.mock.calls[0]!);
     expect(quoteCall.url).toBe("/api/v1/checkout/quote/");
-    expect(quoteCall.headers.Authorization).toBe("Bearer test-token");
+    // No token in page JavaScript: the httpOnly session cookie authenticates.
+    expect(quoteCall.headers.Authorization).toBeUndefined();
     expect(quoteCall.body.address).toMatchObject({ state_code: "MH", country_code: "IN" });
 
     expect(await screen.findByText("Review your order")).toBeInTheDocument();

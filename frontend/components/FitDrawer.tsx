@@ -78,6 +78,8 @@ interface FitDrawerProps {
   readonly garment: GarmentType;
   readonly productName: string;
   readonly supportsBespoke: boolean;
+  /** Sizes this product is actually available in; defaults to the full run. */
+  readonly sizes?: readonly string[];
   readonly onSubmit: (selection: FitSelection) => void;
 }
 
@@ -88,13 +90,14 @@ export function FitDrawer({
   productName,
   supportsBespoke,
   onSubmit,
+  sizes = STANDARD_SIZES,
 }: FitDrawerProps) {
   const headingId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
   const [mode, setMode] = useState<"standard" | "bespoke">("standard");
-  const [size, setSize] = useState<string>("M");
+  const [size, setSize] = useState<string>(sizes.includes("M") ? "M" : (sizes[0] ?? "M"));
   const [unit, setUnit] = useState<Unit>("inch");
   const [fullLining, setFullLining] = useState(false);
   const [values, setValues] = useState<Partial<Record<MeasurementName, number>>>({});
@@ -329,7 +332,7 @@ export function FitDrawer({
                 Standard size
               </legend>
               <div className="grid grid-cols-3 gap-2">
-                {STANDARD_SIZES.map((option) => (
+                {sizes.map((option) => (
                   <label
                     key={option}
                     className={cn(
