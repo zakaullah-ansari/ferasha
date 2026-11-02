@@ -88,10 +88,27 @@ function SiteFooter() {
     <footer className="dark mt-24 bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-5 py-12">
         <p className="font-display text-xl">Ferasha</p>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">Discover your ethnic wardrobe</p>
+        <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
           Modest luxury, cut to order in Mumbai. Every garment publishes its
           coverage so you know what you are buying before it arrives.
         </p>
+
+        <div className="mt-8 border-t border-border pt-6">
+          <p className="text-sm">
+            Tailored by <span className="font-display text-base">Kausar Dezine Studio</span>
+            <span className="text-muted-foreground"> · Fashion with Dignity</span>
+          </p>
+          <address className="mt-2 text-sm not-italic leading-relaxed text-muted-foreground">
+            Shop No. C/01, 187, Al-Shams Apt., near Karthika High School,
+            <br />
+            New Hall Road, Kurla (W), Mumbai 400070
+            <br />
+            <a href="tel:+919819995222" className="underline-offset-4 hover:text-foreground hover:underline">
+              +91 98199 95222
+            </a>
+          </address>
+        </div>
         <p className="mt-6 text-xs text-muted-foreground">
           Prices in INR, inclusive of GST where applicable.
         </p>
