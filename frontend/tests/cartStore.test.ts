@@ -1,44 +1,58 @@
-import { describe, it, expect } from 'vitest';
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { useCartStore } from './useCartStore';
+import { beforeEach, describe, expect, it } from "vitest";
 
-// Mocking local storage for persist middleware
-const localStorageMock = (() => {
-  let store: Record<string, any> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    clear: () => { store = {}; },
-  };
-})();
+import { useCartStore } from "@/store/useCartStore";
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+const saree = {
+  variantId: "v-saree",
+  name: "Silk Saree",
+  price: 12000,
+  quantity: 1,
+  image: "/saree.jpg",
+  colour: "Ivory",
+  size: "M",
+};
 
-describe('useCartStore', () => {
-  it('should add items to the cart', () => {
-    const store = useCartStore.getState();
-    store.addItem({ id: 'v1', name: 'Silk Saree', price: 12000, quantity: 1 });
+// getState() returns a snapshot; read it again after every action rather than
+// holding one reference across mutations.
+const items = () => useCartStore.getState().items;
 
-    expect(store.items).toHaveLength(1);
-    expect(store.items[0].id).toBe('v1');
+describe("useCartStore", () => {
+  beforeEach(() => {
+    useCartStore.getState().clearCart();
   });
 
-  it('should update quantity of existing items', () => {
-    const store = useCartStore.getState();
-    store.addItem({ id: 'v1', name: 'Silk Saree', price: 12000, quantity: 1 });
-    store.updateQuantity('v1', 2);
+  it("adds a new line", () => {
+    useCartStore.getState().addItem(saree);
 
-    expect(store.items[0].quantity).toBe(2);
+    expect(items()).toEqual([saree]);
   });
 
-  it('should calculate the total price correctly', () => {
-    const store = useCartStore.getState();
-    store.clearCart();
-    store.addItem({ id: 'v1', name: 'Saree', price: 1000, quantity: 2 });
-    store.addItem({ id: 'v2', name: 'Dupatta', price: 500, quantity: 1 });
+  it("accumulates quantity when the same variant is added again", () => {
+    useCartStore.getState().addItem(saree);
+    useCartStore.getState().addItem({ ...saree, quantity: 2 });
 
-    // Total = (1000*2) + (500*1) = 2500
-    expect(store.getTotalPrice()).toBe(2500);
+    expect(items()).toHaveLength(1);
+    expect(items()[0]?.quantity).toBe(3);
+  });
+
+  it("never lets quantity fall below one", () => {
+    useCartStore.getState().addItem(saree);
+    useCartStore.getState().updateQuantity(saree.variantId, 0);
+
+    expect(items()[0]?.quantity).toBe(1);
+  });
+
+  it("removes a line", () => {
+    useCartStore.getState().addItem(saree);
+    useCartStore.getState().removeItem(saree.variantId);
+
+    expect(items()).toEqual([]);
+  });
+
+  it("persists the bag to localStorage", () => {
+    useCartStore.getState().addItem(saree);
+
+    const stored = JSON.parse(window.localStorage.getItem("ferasha-cart-storage") ?? "{}");
+    expect(stored.state.items).toEqual([saree]);
   });
 });
