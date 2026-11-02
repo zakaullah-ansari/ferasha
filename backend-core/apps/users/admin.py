@@ -3,13 +3,25 @@
 from __future__ import annotations
 
 from django.contrib import admin
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
+from unfold.admin import ModelAdmin, TabularInline
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 from .models import Address, User
 
+# Re-register auth's Group on unfold's base so staff groups match the rest.
+admin.site.unregister(Group)
 
-class AddressInline(admin.TabularInline):
+
+@admin.register(Group)
+class GroupAdmin(BaseGroupAdmin, ModelAdmin):
+    pass
+
+
+class AddressInline(TabularInline):
     model = Address
     extra = 0
     fields = ("kind", "recipient_name", "city", "state_code", "country_code", "is_default")
@@ -17,7 +29,10 @@ class AddressInline(admin.TabularInline):
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, ModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
     ordering = ("-created_at",)
     list_display = ("email", "full_name", "role", "is_active", "email_verified_at", "created_at")
     list_filter = ("role", "is_active", "is_staff", "is_superuser", "created_at")
@@ -46,7 +61,7 @@ class UserAdmin(BaseUserAdmin):
 
 
 @admin.register(Address)
-class AddressAdmin(admin.ModelAdmin):
+class AddressAdmin(ModelAdmin):
     list_display = ("recipient_name", "user", "kind", "city", "state_code", "country_code", "is_default")
     list_filter = ("kind", "country_code", "state_code", "is_default")
     search_fields = ("recipient_name", "user__email", "city", "postal_code", "gstin")

@@ -50,6 +50,8 @@ AI_ENGINE_URL = env("AI_ENGINE_URL", "http://localhost:8001")
 AI_ENGINE_SHARED_SECRET = env("AI_ENGINE_SHARED_SECRET", "insecure-shared-secret")
 
 INSTALLED_APPS = [
+    # django-unfold restyles the admin; it must load before django.contrib.admin.
+    "unfold",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -142,6 +144,10 @@ CACHES = {
 }
 
 AUTH_USER_MODEL = "users.User"
+# The admin is the only session login (the storefront uses JWTs). unfold's
+# login template drops Django's hidden "next" field, so logging in at
+# /admin/login/ directly fell back to the default /accounts/profile/ - a 404.
+LOGIN_REDIRECT_URL = "admin:index"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -185,6 +191,10 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "rest_framework.views.exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+# Back-office admin look and navigation; see config/admin_ui.py.
+# Imported to be read by django-unfold through django.conf.settings.
+from config.admin_ui import UNFOLD  # noqa: E402, F401
 
 EXPOSE_API_DOCS = env_bool("EXPOSE_API_DOCS", False)
 

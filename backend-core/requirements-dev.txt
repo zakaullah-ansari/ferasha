@@ -8,4 +8,6 @@ freezegun==1.5.1
 ruff==0.8.4
 mypy==1.13.0
 django-stubs[compatible-mypy]==5.2.9
+# Pinned: left floating it resolves to the Django 6 stubs.
+django-stubs-ext==5.2.9
 djangorestframework-stubs==3.16.9
