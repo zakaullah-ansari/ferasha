@@ -1,114 +1,143 @@
+"""Cart mutations.
+
+The server cart belongs to an authenticated customer. Guests keep their basket
+client-side and hand it over through ``merge_items`` at sign-in: the API
+authenticates with JWTs, so there is no session cookie to key a server-side
+guest cart on.
+
+Every mutation validates the variant is purchasable and clamps against stock
+here, so the cart can never hold something checkout is bound to refuse.
+"""
+
 from __future__ import annotations
 
-import logging
-from typing import Optional
-from django.db import transaction, F
-from django.conf import settings
-from apps.cart.models import Cart, CartItem
+from collections.abc import Iterable
+from typing import Any
+
+from django.db import IntegrityError, transaction
+
+from apps.catalog.enums import ProductStatus
 from apps.catalog.models import ProductVariant
 
-logger = logging.getLogger(__name__)
+from .models import Cart, CartItem
 
-class CartService:
-    """Business logic for cart management.
+#: Upper bound per line. A luxury basket with 50 of one lehenga is an error or
+#: abuse, never a real order; refusing it keeps stock locks short at checkout.
+MAX_QUANTITY_PER_LINE = 10
 
-    Encapsulates all cart mutations to ensure atomic updates and
-    consistent state transitions.
+
+class CartError(ValueError):
+    """A cart mutation the customer can correct (bad variant, no stock)."""
+
+
+def _purchasable_variant(variant_id: Any) -> ProductVariant:
+    try:
+        variant = ProductVariant.objects.select_related("product").get(pk=variant_id)
+    except (ProductVariant.DoesNotExist, ValueError, TypeError) as exc:
+        # ValueError/TypeError: a malformed UUID is "not found", not a 500.
+        raise CartError("That item is not available.") from exc
+    if not variant.is_active or variant.product.status != ProductStatus.ACTIVE:
+        raise CartError("That item is no longer available.")
+    return variant
+
+
+def _validated_quantity(quantity: Any) -> int:
+    try:
+        value = int(quantity)
+    except (TypeError, ValueError) as exc:
+        raise CartError("Quantity must be a whole number.") from exc
+    if value < 1:
+        raise CartError("Quantity must be at least 1.")
+    return value
+
+
+def _clamp_to_stock(variant: ProductVariant, quantity: int) -> int:
+    available = min(variant.stock_quantity, MAX_QUANTITY_PER_LINE)
+    if available < 1:
+        raise CartError(f"{variant.product.name} ({variant.size}) is out of stock.")
+    return min(quantity, available)
+
+
+def get_active_cart(user) -> Cart:
+    """The customer's single active cart, created on first use.
+
+    ``unique_active_user_cart`` makes a concurrent double-create fail in the
+    database; the loser re-reads the winner's row instead of erroring.
     """
-
-    @staticmethod
-    def get_or_create_cart(user=None, session_key: Optional[str] = None) -> Cart:
-        """Retrieve an active cart or create a new one.
-
-        Priority:
-        1. If user is authenticated, return their active cart.
-        2. If session_key is provided, return that guest cart.
-        3. Otherwise, create a new guest cart.
-        """
-        if user:
-            cart = Cart.objects.filter(user=user, is_active=True).first()
-            if cart:
-                return cart
-
-        if session_key:
-            cart = Cart.objects.filter(session_key=session_key, is_active=True).first()
-            if cart:
-                return cart
-
-        return Cart.objects.create(user=user, session_key=session_key)
-
-    @staticmethod
-    def add_item(cart: Cart, variant_id: str, quantity: int = 1) -> CartItem:
-        """Atomically add or increment an item in the cart.
-
-        Uses F() expressions to prevent race conditions during
-        concurrent quantity updates.
-        """
-        if quantity <= 0:
-            raise ValueError("Quantity must be positive.")
-
+    cart = Cart.objects.filter(user=user, is_active=True).first()
+    if cart is not None:
+        return cart
+    try:
         with transaction.atomic():
-            item, created = CartItem.objects.get_or_create(
-                cart=cart,
-                variant_id=variant_id,
-                defaults={"quantity": quantity}
-            )
+            return Cart.objects.create(user=user)
+    except IntegrityError:
+        return Cart.objects.get(user=user, is_active=True)
 
-            if not created:
-                item.quantity = F("quantity") + quantity
-                item.save()
-                item.refresh_from_db()
 
-        return item
+@transaction.atomic
+def add_item(cart: Cart, variant_id: Any, quantity: Any = 1) -> CartItem:
+    """Add a variant, or increase its quantity if already in the cart."""
+    quantity = _validated_quantity(quantity)
+    variant = _purchasable_variant(variant_id)
+    # Lock the line so two concurrent adds sum rather than overwrite.
+    item = CartItem.objects.select_for_update().filter(cart=cart, variant=variant).first()
+    current = item.quantity if item else 0
+    target = _clamp_to_stock(variant, current + quantity)
+    if item is None:
+        return CartItem.objects.create(cart=cart, variant=variant, quantity=target)
+    item.quantity = target
+    item.save(update_fields=["quantity", "updated_at"])
+    return item
 
-    @staticmethod
-    def update_quantity(cart: Cart, variant_id: str, quantity: int) -> CartItem:
-        """Set a specific quantity for an item."""
-        if quantity <= 0:
-            return CartService.remove_item(cart, variant_id)
 
-        with transaction.atomic():
-            item = CartItem.objects.get(cart=cart, variant_id=variant_id)
-            item.quantity = quantity
-            item.save()
+@transaction.atomic
+def set_quantity(cart: Cart, variant_id: Any, quantity: Any) -> CartItem | None:
+    """Set an exact quantity. Zero removes the line and returns ``None``."""
+    try:
+        value = int(quantity)
+    except (TypeError, ValueError) as exc:
+        raise CartError("Quantity must be a whole number.") from exc
+    if value <= 0:
+        remove_item(cart, variant_id)
+        return None
+    item = (
+        CartItem.objects.select_for_update()
+        .select_related("variant__product")
+        .filter(cart=cart, variant_id=variant_id)
+        .first()
+    )
+    if item is None:
+        raise CartError("That item is not in your bag.")
+    item.quantity = _clamp_to_stock(item.variant, value)
+    item.save(update_fields=["quantity", "updated_at"])
+    return item
 
-        return item
 
-    @staticmethod
-    def remove_item(cart: Cart, variant_id: str) -> bool:
-        """Remove an item from the cart."""
+def remove_item(cart: Cart, variant_id: Any) -> bool:
+    try:
         deleted, _ = CartItem.objects.filter(cart=cart, variant_id=variant_id).delete()
-        return deleted > 0
+    except (ValueError, TypeError):
+        return False
+    return deleted > 0
 
-    @staticmethod
-    def clear_cart(cart: Cart) -> None:
-        """Empty the cart and mark it as inactive."""
-        CartItem.objects.filter(cart=cart).delete()
-        cart.is_active = False
-        cart.save()
 
-    @staticmethod
-    def merge_guest_cart(user, session_key: str) -> Cart:
-        """Migrate items from a guest session to a registered user's cart.
+def clear(cart: Cart) -> None:
+    cart.items.all().delete()
 
-        This is called during the authentication flow to ensure customers
-        don't lose their items when they log in.
-        """
-        if not session_key:
-            return CartService.get_or_create_cart(user=user)
 
-        with transaction.atomic():
-            guest_cart = Cart.objects.filter(session_key=session_key, is_active=True).first()
-            user_cart = CartService.get_or_create_cart(user=user)
+@transaction.atomic
+def merge_items(cart: Cart, items: Iterable[dict[str, Any]]) -> list[str]:
+    """Fold a guest basket into the customer's cart at sign-in.
 
-            if guest_cart and guest_cart != user_cart:
-                # Migrate items
-                items = CartItem.objects.filter(cart=guest_cart)
-                for item in items:
-                    CartService.add_item(user_cart, item.variant_id, item.quantity)
-
-                # Deactivate guest cart
-                guest_cart.is_active = False
-                guest_cart.save()
-
-            return user_cart
+    Unavailable lines are skipped rather than failing the whole merge - losing
+    one sold-out item is better than losing the bag. Returns the skipped ids so
+    the storefront can tell the customer.
+    """
+    skipped: list[str] = []
+    for entry in items:
+        variant_id = entry.get("variant_id")
+        try:
+            add_item(cart, variant_id, entry.get("quantity", 1))
+        except CartError:
+            skipped.append(str(variant_id))
+    return skipped

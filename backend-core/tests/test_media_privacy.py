@@ -189,3 +189,63 @@ class TestProductImageGuard:
         )
         with pytest.raises(ProtectedError):
             asset.delete()
+
+
+class TestFaceCoverageSync:
+    """A product earns the face-modest badge only when every image is approved."""
+
+    def approved_asset(self):
+        asset = make_asset(derivative=SimpleUploadedFile("blurred.jpg", b"blurred-bytes"))
+        asset.mark_approved(faces=1, blur_verified=True)
+        return asset
+
+    def product_with(self, *assets, **kw):
+        from apps.catalog.models import ProductImage
+        from tests.factories import make_product
+
+        product = make_product(**kw)
+        for asset in assets:
+            ProductImage.objects.create(product=product, asset=asset, alt_text="Alt")
+        return product
+
+    def test_all_images_approved_is_partial(self):
+        from apps.catalog.enums import FaceCoverage
+        from apps.catalog.services import sync_face_coverage
+
+        product = self.product_with(self.approved_asset(), self.approved_asset())
+
+        assert sync_face_coverage(product) == FaceCoverage.PARTIAL
+        product.refresh_from_db()
+        assert product.face_coverage == FaceCoverage.PARTIAL
+
+    def test_one_unreviewed_image_keeps_the_product_exposed(self):
+        """Regression: one blurred image used to badge the whole product."""
+        from apps.catalog.enums import FaceCoverage
+        from apps.catalog.services import sync_face_coverage
+
+        product = self.product_with(self.approved_asset(), make_asset())
+
+        assert sync_face_coverage(product) == FaceCoverage.EXPOSED
+
+    def test_a_product_without_images_makes_no_claim(self):
+        from apps.catalog.enums import FaceCoverage
+        from apps.catalog.services import sync_face_coverage
+
+        assert sync_face_coverage(self.product_with()) == FaceCoverage.EXPOSED
+
+    def test_losing_approval_withdraws_the_badge(self):
+        from apps.catalog.enums import FaceCoverage
+        from apps.catalog.services import sync_face_coverage
+
+        pending = make_asset()
+        product = self.product_with(self.approved_asset(), pending, face_coverage="partial")
+
+        assert sync_face_coverage(product) == FaceCoverage.EXPOSED
+
+    def test_merchandiser_full_is_never_overwritten(self):
+        from apps.catalog.enums import FaceCoverage
+        from apps.catalog.services import sync_face_coverage
+
+        product = self.product_with(make_asset(), face_coverage=FaceCoverage.FULL)
+
+        assert sync_face_coverage(product) == FaceCoverage.FULL

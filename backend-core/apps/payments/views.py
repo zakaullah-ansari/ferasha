@@ -1,82 +1,139 @@
+"""Payment endpoints.
+
+* ``POST /payments/orders/<order_number>/initiate/`` - provider order for the widget.
+* ``POST /payments/orders/<order_number>/verify/``   - browser-side confirmation.
+* ``POST /payments/webhooks/razorpay/``              - provider-side confirmation.
+"""
+
 from __future__ import annotations
 
+import json
 import logging
-from typing import Any
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, JsonResponse
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework import status
 
-from .adapters.razorpay import RazorpayAdapter
-from apps.orders.models import Order, OrderStatus
-from apps.orders.state_machine import OrderStateMachine
-from django.conf import settings
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
+from rest_framework import serializers, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.orders.models import Order
+
+from . import services
+from .gateways import (
+    PaymentConfigurationError,
+    PaymentGatewayError,
+    RazorpayGateway,
+    get_gateway,
+)
 
 logger = logging.getLogger(__name__)
 
-class PaymentWebhookView(APIView):
-    """
-    Endpoint for Payment Provider webhooks.
-    Handles async notifications (e.g., payment.captured) to finalize orders.
-    """
-    permission_classes = [AllowAny] # Webhooks are called by external servers
 
-    def post(self, request):
-        # 1. Initialize the adapter based on current config
-        # In a production system, this would be a factory: PaymentGatewayFactory.get_provider()
-        adapter = RazorpayAdapter(
-            api_key=settings.RAZORPAY_KEY,
-            api_secret=settings.RAZORPAY_SECRET
+def _customer_order(request, order_number: str) -> Order:
+    # Another customer's order number 404s exactly like a missing one.
+    return get_object_or_404(Order, order_number=order_number, customer=request.user)
+
+
+class InitiatePaymentView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(summary="Open a payment for a placed order", request=None, tags=["payments"])
+    def post(self, request, order_number: str):
+        order = _customer_order(request, order_number)
+        try:
+            payment = services.initiate(order)
+            client = get_gateway().client_config()
+        except services.PaymentError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+        except PaymentConfigurationError:
+            logger.error("Payment initiation attempted with no gateway credentials.")
+            return Response(
+                {"detail": "Payments are temporarily unavailable."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except PaymentGatewayError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response(
+            {
+                **client,
+                "provider_order_id": payment.provider_order_id,
+                "amount": str(payment.amount),
+                "currency": payment.currency,
+                "order_number": order.order_number,
+            },
+            status=status.HTTP_201_CREATED,
         )
 
-        # 2. Security: Verify the HMAC signature
-        signature = request.headers.get("X-Razorpay-Signature")
-        if not signature:
-            logger.warning("Payment webhook received without signature header.")
-            return Response({"detail": "Missing signature"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # We need the raw body for HMAC verification
-        raw_payload = request.body
-        if not adapter.verify_webhook(raw_payload, signature):
-            logger.error("Invalid payment webhook signature detected!")
-            return Response({"detail": "Invalid signature"}, status=status.HTTP_401_UNAUTHORIZED)
+class VerifyPaymentSerializer(serializers.Serializer):
+    provider_order_id = serializers.CharField(max_length=64)
+    provider_payment_id = serializers.CharField(max_length=64)
+    signature = serializers.CharField(max_length=128)
 
-        # 3. Process the event
-        data = request.data
-        event = data.get("event")
-        payload = data.get("payload", {}).get("payment", {})
-        order_id = payload.get("order_id")
 
-        if event == "payment.captured":
-            return self._handle_payment_success(order_id)
-        elif event == "payment.failed":
-            return self._handle_payment_failure(order_id)
+class VerifyPaymentView(APIView):
+    permission_classes = (IsAuthenticated,)
 
-        return Response({"detail": "Event ignored"}, status=status.HTTP_200_OK)
+    @extend_schema(
+        summary="Confirm a payment from the checkout widget",
+        request=VerifyPaymentSerializer,
+        tags=["payments"],
+    )
+    def post(self, request, order_number: str):
+        order = _customer_order(request, order_number)
+        payload = VerifyPaymentSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        data = payload.validated_data
 
-    def _handle_payment_success(self, order_id: str):
+        # The provider order must belong to *this* order, or a valid signature
+        # from a cheap order could confirm an expensive one.
+        if not order.payments.filter(provider_order_id=data["provider_order_id"]).exists():
+            return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not get_gateway().verify_payment_signature(**data):
+            logger.warning("Bad payment signature for order %s", order.order_number)
+            return Response(
+                {"detail": "Payment could not be verified."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        services.confirm_capture(
+            provider_order_id=data["provider_order_id"],
+            provider_payment_id=data["provider_payment_id"],
+            source="checkout",
+        )
+        order.refresh_from_db(fields=["status"])
+        return Response({"order_number": order.order_number, "status": order.status})
+
+
+class RazorpayWebhookView(APIView):
+    """Signed by HMAC-SHA256 of the raw body; no user authentication applies."""
+
+    permission_classes = (AllowAny,)
+    # No authenticators: a stray Authorization header must not turn a valid
+    # webhook into a 401. No throttle: the signature is the gate.
+    authentication_classes = ()
+    throttle_classes = ()
+
+    @extend_schema(exclude=True)
+    def post(self, request):
+        gateway = RazorpayGateway()
+        body = request.body  # raw bytes; must be read before request.data
+        signature = request.headers.get("X-Razorpay-Signature", "")
         try:
-            order = Order.objects.get(id=order_id)
+            verified = gateway.verify_webhook_signature(body, signature)
+        except PaymentConfigurationError:
+            logger.error("Razorpay webhook received but RAZORPAY_WEBHOOK_SECRET is unset.")
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        if not verified:
+            logger.warning("Rejected Razorpay webhook with an invalid signature.")
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-            # Transition state: PLACED -> PAYMENT_CONFIRMED
-            OrderStateMachine.transition(order, OrderStatus.PAYMENT_CONFIRMED)
-
-            logger.info("Order %s successfully confirmed via webhook.", order_id)
-            return Response({"status": "success"}, status=status.HTTP_200_OK)
-        except Order.DoesNotExist:
-            logger.error("Webhook received for non-existent order: %s", order_id)
-            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    def _handle_payment_failure(self, order_id: str):
         try:
-            order = Order.objects.get(id=order_id)
+            payload = json.loads(body)
+            event = gateway.parse_webhook(body, request.headers)
+        except (ValueError, AttributeError):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-            # Transition state: PLACED -> PAYMENT_FAILED
-            OrderStateMachine.transition(order, OrderStatus.PAYMENT_FAILED)
-
-            logger.info("Order %s marked as failed via webhook.", order_id)
-            return Response({"status": "failure_recorded"}, status=status.HTTP_200_OK)
-        except Order.DoesNotExist:
-            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        applied = services.handle_webhook(event, provider=gateway.name, payload=payload)
+        return Response({"applied": applied})

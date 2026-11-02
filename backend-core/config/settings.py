@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from datetime import timedelta
+from decimal import Decimal
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -71,6 +72,8 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.reviews",
     "apps.cart",
+    "apps.checkout",
+    "apps.payments",
 ]
 
 MIDDLEWARE = [
@@ -83,7 +86,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "apps.middleware.idempotency.IdempotencyMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -271,6 +273,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 FERASHA_HOME_STATE_CODE = "MH"
 FERASHA_HOME_COUNTRY = "IN"
 FERASHA_CURRENCY = "INR"
+# Delivery charges. Free within the home state; flat elsewhere in India.
+# International delivery is refused at checkout until a courier rate exists.
+FERASHA_SHIPPING_HOME_STATE = Decimal("0.00")
+FERASHA_SHIPPING_DOMESTIC = Decimal("150.00")
+
+# --- Payments --------------------------------------------------------------
+# Dotted path to a apps.payments.gateways.PaymentGateway subclass.
+PAYMENT_GATEWAY = os.environ.get("PAYMENT_GATEWAY", "apps.payments.gateways.RazorpayGateway")
+# Empty values do not stop the boot (catalogue browsing needs no payments);
+# payment endpoints answer 503 until they are set.
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+# Set per webhook in the Razorpay dashboard; distinct from the key secret.
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "")
 
 # --- Security --------------------------------------------------------------
 X_FRAME_OPTIONS = "DENY"
@@ -303,4 +319,3 @@ LOGGING = {
         "django.db.backends": {"level": "WARNING", "handlers": ["console"], "propagate": False},
     },
 }
-"apps.cart"
