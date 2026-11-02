@@ -1,8 +1,10 @@
-import React from 'react';
+"use client";
+
 import { cn } from '@/lib/cn';
+import { formatINR } from '@/lib/format';
 import { useCartStore } from '@/store/useCartStore';
 import { X, Plus, Minus, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button'; // Assuming shadcn base
+import { Button } from '@/components/ui/button';
 
 export function CartDrawer({ className }: { className?: string }) {
   const { items, isOpen, toggleDrawer, updateQuantity, removeItem } = useCartStore();
@@ -29,7 +31,7 @@ export function CartDrawer({ className }: { className?: string }) {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <h2 className="font-display text-xl tracking-tight">Your Selection</h2>
-            <Button variant="ghost" size="icon" onClick={toggleDrawer}>
+            <Button variant="ghost" size="icon" onClick={toggleDrawer} aria-label="Close bag">
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -53,12 +55,14 @@ export function CartDrawer({ className }: { className?: string }) {
                         <h3 className="text-sm font-medium leading-none">{item.name}</h3>
                         <p className="text-xs text-muted-foreground mt-1">{item.colour} • {item.size}</p>
                       </div>
-                      <p className="text-sm font-medium tabular-nums">{item.price} INR</p>
+                      <p className="text-sm font-medium tabular-nums">{formatINR(item.price)}</p>
                     </div>
 
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center border rounded-full px-1">
                         <button
+                          type="button"
+                          aria-label={`Decrease quantity of ${item.name}`}
                           onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                           className="p-1 hover:bg-muted rounded-full transition-colors"
                         >
@@ -68,6 +72,8 @@ export function CartDrawer({ className }: { className?: string }) {
                           {item.quantity}
                         </span>
                         <button
+                          type="button"
+                          aria-label={`Increase quantity of ${item.name}`}
                           onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                           className="p-1 hover:bg-muted rounded-full transition-colors"
                         >
@@ -75,6 +81,8 @@ export function CartDrawer({ className }: { className?: string }) {
                         </button>
                       </div>
                       <button
+                        type="button"
+                        aria-label={`Remove ${item.name} from bag`}
                         onClick={() => removeItem(item.variantId)}
                         className="text-muted-foreground hover:text-destructive transition-colors"
                       >
@@ -92,7 +100,7 @@ export function CartDrawer({ className }: { className?: string }) {
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Subtotal ({totalItems} items)</span>
               <span className="text-lg font-display font-medium tabular-nums">
-                {totalPrice.toLocaleString('en-IN')} INR
+                {formatINR(totalPrice)}
               </span>
             </div>
             <Button className="w-full py-6 text-md font-medium tracking-wide" size="lg">
