@@ -29,6 +29,9 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
             Order.objects.select_related("tax_snapshot", "customer")
             .prefetch_related("lines__tailoring_spec", "events")
             .annotate(line_count=Count("lines", distinct=True))
+            # The aggregate drops Meta.ordering (GROUP BY); without an explicit
+            # order, paginated order history can repeat or skip orders.
+            .order_by("-created_at", "pk")
         )
         if user.is_back_office:
             return qs

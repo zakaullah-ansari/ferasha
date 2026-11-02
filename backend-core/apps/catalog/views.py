@@ -97,6 +97,10 @@ class ProductViewSet(viewsets.ModelViewSet):
                     distinct=True,
                 ),
             )
+            # An aggregate makes this a GROUP BY query, which drops
+            # Meta.ordering; unordered pages can repeat or skip products.
+            # `pk` breaks ties so page boundaries are deterministic.
+            .order_by(*Product._meta.ordering, "pk")
         )
 
         if not user.is_authenticated:
