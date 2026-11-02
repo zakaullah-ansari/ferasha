@@ -154,6 +154,23 @@ class TestReviewModeration:
         assert review.status == ReviewStatus.PUBLISHED
         assert review.moderated_by == superuser
 
+    def test_view_only_staff_cannot_moderate(self, client, variant):
+        """Regression: actions without allowed_permissions run for anyone who can view the list."""
+        viewer = make_user(email="review-viewer@example.com", is_staff=True)
+        viewer.user_permissions.add(Permission.objects.get(codename="view_review"))
+        client.force_login(viewer)
+        review = Review.objects.create(product=variant.product, author=make_user(), rating=1)
+
+        for action_name in ("publish", "reject"):
+            client.post(
+                reverse("admin:reviews_review_changelist"),
+                {"action": action_name, "_selected_action": [str(review.pk)]},
+            )
+
+        review.refresh_from_db()
+        assert review.status == ReviewStatus.PENDING
+        assert review.moderated_by is None
+
 
 class TestImagePicker:
     def test_only_approved_images_are_offered(self, admin_client):

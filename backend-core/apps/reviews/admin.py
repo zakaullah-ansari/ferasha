@@ -42,12 +42,14 @@ class ReviewAdmin(ModelAdmin):
     def _moderate(self, request, queryset, status: str) -> int:
         return queryset.update(status=status, moderated_by=request.user, moderated_at=timezone.now())
 
-    @action(description=_("Publish selected reviews"))
+    # permissions=["change"]: without it Django offers an action to anyone who
+    # can open the list, so view-only staff could publish or reject reviews.
+    @action(description=_("Publish selected reviews"), permissions=["change"])
     def publish(self, request, queryset):
         count = self._moderate(request, queryset, ReviewStatus.PUBLISHED)
         messages.success(request, _("%(count)d review(s) published.") % {"count": count})
 
-    @action(description=_("Reject selected reviews"))
+    @action(description=_("Reject selected reviews"), permissions=["change"])
     def reject(self, request, queryset):
         count = self._moderate(request, queryset, ReviewStatus.REJECTED)
         messages.success(request, _("%(count)d review(s) rejected.") % {"count": count})
