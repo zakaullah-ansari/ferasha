@@ -36,13 +36,23 @@ export async function getAuthed<T>(path: string): Promise<T> {
 
 /**
  * A same-site path to return to after sign-in, or "/" for anything else.
- * Rejects absolute and protocol-relative URLs ("//evil.com"), which would turn
- * the sign-in page into an open redirect.
+ *
+ * Parsed, not prefix-matched: browsers strip tabs and newlines from URLs, so
+ * "/\t/evil.com" (a literal tab) passes a startsWith("//") check yet goes to
+ * //evil.com. Control characters and backslashes are refused outright, then
+ * the value must resolve against a placeholder origin without leaving it.
  */
 export function safeNextPath(next: string | string[] | undefined): string {
   const value = Array.isArray(next) ? next[0] : next;
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) {
+  // eslint-disable-next-line no-control-regex
+  if (!value || !value.startsWith("/") || /[\u0000-\u001f\u007f\\]/.test(value)) return "/";
+  const base = "http://same-origin.invalid";
+  let url: URL;
+  try {
+    url = new URL(value, base);
+  } catch {
     return "/";
   }
-  return value;
+  if (url.origin !== base) return "/";
+  return `${url.pathname}${url.search}${url.hash}`;
 }

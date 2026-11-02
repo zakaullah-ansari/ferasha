@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { ACCESS_COOKIE, backendOrigin } from "@/lib/session";
+import { ACCESS_COOKIE, backendOrigin, trustedClientIp } from "@/lib/session";
 
 /**
  * Browser -> Django proxy for /api/v1/*.
@@ -15,8 +15,11 @@ import { ACCESS_COOKIE, backendOrigin } from "@/lib/session";
  * applied the CSRF check; here the access cookie becomes a bearer header.
  */
 
-/** Request headers worth forwarding; everything else stays at the edge. */
-const FORWARD_REQUEST = ["accept", "accept-language", "content-type", "idempotency-key", "x-forwarded-for"];
+/**
+ * Request headers worth forwarding; everything else stays at the edge.
+ * Never the visitor's own X-Forwarded-For - see trustedClientIp.
+ */
+const FORWARD_REQUEST = ["accept", "accept-language", "content-type", "idempotency-key"];
 /** Response headers the browser should see from Django. */
 const FORWARD_RESPONSE = ["content-type", "cache-control", "idempotent-replayed", "retry-after"];
 
@@ -29,6 +32,8 @@ async function proxy(request: NextRequest): Promise<NextResponse> {
   }
   const access = request.cookies.get(ACCESS_COOKIE)?.value;
   if (access) headers.set("authorization", `Bearer ${access}`);
+  const clientIp = trustedClientIp(request.headers);
+  if (clientIp) headers.set("x-forwarded-for", clientIp);
 
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   let upstream: Response;

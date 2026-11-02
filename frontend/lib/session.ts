@@ -136,16 +136,35 @@ export function clearSessionCookies(response: CookieWriter): void {
 }
 
 /**
- * Headers for a server-to-Django call made on a browser's behalf. Forwarding
- * the client address keeps Django's per-IP login throttle per customer
- * rather than one bucket for the whole storefront server.
+ * The visitor's IP address, or null when it cannot be established safely.
+ *
+ * Read only from the header named by CLIENT_IP_HEADER, which must be one our
+ * own edge sets and overwrites (nginx `proxy_set_header X-Real-IP
+ * $remote_addr`, Cloudflare `cf-connecting-ip`). A visitor's own
+ * X-Forwarded-For is never trusted: forwarding it would let them pick the IP
+ * Django's login throttle counts - unlimited password guessing, or locking a
+ * victim out by spoofing theirs.
+ *
+ * Unset (local development): nothing is forwarded and Django throttles per
+ * storefront server.
  */
+export function trustedClientIp(incoming: Headers): string | null {
+  const header = process.env.CLIENT_IP_HEADER?.trim().toLowerCase();
+  if (!header) return null;
+  const value = incoming.get(header)?.trim();
+  // An IPv4 or IPv6 literal and nothing else.
+  return value && /^[0-9a-fA-F:.]{2,45}$/.test(value) ? value : null;
+}
+
+/** Headers for a server-to-Django call made on a browser's behalf. */
 export function upstreamHeaders(incoming: Headers, accessToken?: string): HeadersInit {
-  const forwardedFor = incoming.get("x-forwarded-for") ?? incoming.get("x-real-ip");
+  const clientIp = trustedClientIp(incoming);
   return {
     "Content-Type": "application/json",
     Accept: "application/json",
-    ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+    // Django runs with NUM_PROXIES=1, so this single trusted value is the
+    // address its throttles key on.
+    ...(clientIp ? { "X-Forwarded-For": clientIp } : {}),
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 }

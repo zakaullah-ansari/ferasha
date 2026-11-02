@@ -4,12 +4,12 @@
  * (open redirect).
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/headers", () => ({ cookies: vi.fn() }));
 
 import { safeNextPath } from "@/lib/api/server";
-import { isExpiring, isSafeMethod, isSameOrigin, tokenExpiry } from "@/lib/session";
+import { isExpiring, isSafeMethod, isSameOrigin, tokenExpiry, trustedClientIp } from "@/lib/session";
 
 /** An unsigned JWT-shaped string; only the payload matters here. */
 function jwt(payload: object): string {
@@ -80,7 +80,44 @@ describe("return path after sign-in", () => {
     ["//evil.example", "/"],
     ["/\\evil.example", "/"],
     ["checkout", "/"],
-  ])("%s -> %s", (input, expected) => {
+    // Browsers strip tab/CR/LF from URLs, turning these into //evil.example.
+    ["/\t/evil.example", "/"],
+    ["/\n/evil.example", "/"],
+    ["/\r/evil.example", "/"],
+    ["/\\/evil.example", "/"],
+    ["/checkout#review", "/checkout#review"],
+  ])("%j -> %s", (input, expected) => {
     expect(safeNextPath(input)).toBe(expected);
   });
+});
+
+describe("client IP for Django's throttles", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("never trusts a visitor's own X-Forwarded-For", () => {
+    vi.stubEnv("CLIENT_IP_HEADER", "x-real-ip");
+    const spoofed = new Headers({ "x-forwarded-for": "6.6.6.6", "x-real-ip": "203.0.113.7" });
+    expect(trustedClientIp(spoofed)).toBe("203.0.113.7");
+  });
+
+  it("forwards nothing when no trusted edge header is configured", () => {
+    vi.stubEnv("CLIENT_IP_HEADER", "");
+    expect(trustedClientIp(new Headers({ "x-forwarded-for": "6.6.6.6" }))).toBeNull();
+  });
+
+  it("accepts IPv6 from the edge", () => {
+    vi.stubEnv("CLIENT_IP_HEADER", "cf-connecting-ip");
+    expect(trustedClientIp(new Headers({ "cf-connecting-ip": "2001:db8::1" }))).toBe("2001:db8::1");
+  });
+
+  // (A value with a newline cannot even be constructed: Headers refuses it.)
+  it.each(["6.6.6.6, 7.7.7.7", "not-an-ip", "1.2.3.4; evil=1", ""])(
+    "rejects a malformed value %j",
+    (value) => {
+      vi.stubEnv("CLIENT_IP_HEADER", "x-real-ip");
+      expect(trustedClientIp(new Headers({ "x-real-ip": value }))).toBeNull();
+    },
+  );
 });

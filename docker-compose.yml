@@ -157,6 +157,7 @@ services:
       BACKEND_INTERNAL_URL: http://backend-core:8000
       AI_ENGINE_URL: http://ai-engine:8001
       NEXT_TELEMETRY_DISABLED: "1"
+      CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
     volumes:
       - ./frontend:/app
       - /app/node_modules

@@ -163,6 +163,13 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 24,
+    # Throttles key on the client IP. Browser traffic arrives through exactly
+    # one hop we control - the Next.js storefront, which sends a single
+    # X-Forwarded-For taken from a header our edge sets (see the frontend's
+    # trustedClientIp). With the default (None) DRF would use the whole,
+    # client-controllable header, letting anyone pick the IP their login
+    # attempts count against.
+    "NUM_PROXIES": int(os.environ.get("DRF_NUM_PROXIES", "1")),
     "DEFAULT_THROTTLE_CLASSES": (
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
