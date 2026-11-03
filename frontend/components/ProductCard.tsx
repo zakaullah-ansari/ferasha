@@ -28,7 +28,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
               src={product.primary_image}
               alt=""
               loading="lazy"
-              className="size-full object-cover transition-transform duration-500 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.03]"
+              className="size-full object-cover transition-transform duration-500 ease-luxury group-hover:scale-[1.03]"
             />
           ) : (
             <div className="flex size-full items-center justify-center">
