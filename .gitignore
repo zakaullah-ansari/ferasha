@@ -51,3 +51,6 @@ image-search/
 
 *storybook.log
 storybook-static
+
+# Playwright MCP local session artifacts (console logs, screenshots, snapshots)
+.playwright-mcp/

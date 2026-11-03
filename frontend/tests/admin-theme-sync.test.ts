@@ -17,7 +17,7 @@ const adminUi = readFileSync(join(process.cwd(), "../backend-core/config/admin_u
 
 function storefront(token: string): string {
   const root = css.match(/^:root\s*\{([^}]*)\}/m)?.[1] ?? "";
-  const value = root.match(new RegExp(`--${token}:\s*([^;]+);`))?.[1];
+  const value = root.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1];
   if (!value) throw new Error(`--${token} not found in :root`);
   return value.trim();
 }
