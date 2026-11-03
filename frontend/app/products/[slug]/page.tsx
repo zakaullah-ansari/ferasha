@@ -1,8 +1,22 @@
+import { Truck } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CoverageScore, ModestyBadgeList } from "@/components/ModestyBadge";
+import { ProductDetails } from "@/components/product/ProductDetails";
+import { ProductGallery } from "@/components/product/ProductGallery";
+import { ProductRail } from "@/components/product/ProductRail";
 import { ProductPurchasePanel } from "@/components/ProductPurchasePanel";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { ApiError, api } from "@/lib/api/client";
+import { DELIVERY } from "@/lib/delivery";
 import { formatINR } from "@/lib/format";
 
 export const revalidate = 60;
@@ -40,42 +54,42 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
   const product = await load(slug);
-
-  const attributes = [
-    ["Fabric", product.fabric],
-    ["Work", product.work_type],
-    ["Occasion", product.occasion],
-    ["Garment", product.garment_type],
-  ] as const;
+  const related = await api
+    .listProducts({ category: product.category.slug, page_size: 9 })
+    .then(({ results }) => results.filter((item) => item.id !== product.id).slice(0, 8))
+    .catch(() => []);
 
   return (
-    <article className="mx-auto max-w-6xl px-5 py-10">
-      <div className="grid gap-10 md:grid-cols-2 md:gap-14">
-        {/* Gallery */}
-        <div className="aspect-[4/5] overflow-hidden rounded-xl bg-muted">
-          {product.primary_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.primary_image}
-              alt={product.name}
-              className="size-full object-cover"
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center">
-              <span className="font-display text-muted-foreground">
-                Imagery in preparation
-              </span>
-            </div>
-          )}
-        </div>
+    // Bottom padding on phones keeps content clear of the pinned buy bar.
+    <article className="max-md:pb-24">
+      <div className="mx-auto max-w-6xl px-5 pt-6">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link href="/" />}>Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink render={<Link href={`/products?category=${product.category.slug}`} />}>
+                {product.category.name}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="line-clamp-1">{product.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
 
-        {/* Detail */}
-        <div>
-          <h1 className="font-display text-[length:var(--text-display-sm)] leading-tight text-foreground">
-            {product.name}
-          </h1>
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-8 md:grid-cols-[1.15fr_0.85fr] md:gap-14">
+        <ProductGallery images={product.images} name={product.name} />
 
-          <p className="mt-3 text-xl text-foreground">
+        <div className="md:sticky md:top-24 md:self-start">
+          <p className="text-xs tracking-[0.25em] text-muted-foreground uppercase">{product.category.name}</p>
+          <h1 className="mt-3 font-display text-display-sm leading-tight">{product.name}</h1>
+
+          <p className="mt-3 text-xl">
             {formatINR(product.base_price)}
             {product.compare_at_price && (
               <span className="ml-3 text-sm text-muted-foreground line-through">
@@ -89,7 +103,7 @@ export default async function ProductPage({
             not buried in a tab. If a garment is sheer, the customer learns
             that before deciding, not after unwrapping it.
           */}
-          <div className="mt-6 rounded-xl border border-border bg-card p-4">
+          <div className="mt-6 rounded-2xl border bg-card p-4">
             <CoverageScore score={product.modesty.coverage_score} />
             <ModestyBadgeList modesty={product.modesty} className="mt-3" />
             {product.modesty.advisories.length > 0 && (
@@ -103,37 +117,23 @@ export default async function ProductPage({
             <ProductPurchasePanel product={product} />
           </div>
 
-          {product.description && (
-            <p className="mt-8 text-sm leading-relaxed text-muted-foreground">
-              {product.description}
-            </p>
-          )}
+          <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+            <Truck aria-hidden="true" className="size-4" />
+            {DELIVERY.summary}
+          </p>
 
-          <dl className="mt-8 grid grid-cols-2 gap-y-3 border-t border-border pt-6 text-sm">
-            {attributes.map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-xs tracking-wide text-muted-foreground uppercase">
-                  {label}
-                </dt>
-                <dd className="mt-0.5 text-foreground capitalize">
-                  {value.replace(/_/g, " ")}
-                </dd>
-              </div>
-            ))}
-          </dl>
-
-          {product.care_instructions && (
-            <div className="mt-6 border-t border-border pt-6">
-              <h2 className="text-xs tracking-wide text-muted-foreground uppercase">
-                Care
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {product.care_instructions}
-              </p>
-            </div>
-          )}
+          <div className="mt-8">
+            <ProductDetails product={product} />
+          </div>
         </div>
       </div>
+
+      <ProductRail
+        eyebrow="Complete the look"
+        title={`More from ${product.category.name}`}
+        products={related}
+        href={`/products?category=${product.category.slug}`}
+      />
     </article>
   );
 }

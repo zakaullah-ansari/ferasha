@@ -65,10 +65,39 @@ export interface ProductSummary {
   readonly status: string;
 }
 
+/** A publishable image: `url` is null unless the privacy pipeline approved it. */
+export interface ProductImage {
+  readonly id: string;
+  readonly url: string | null;
+  readonly alt_text: string;
+  readonly display_order: number;
+  readonly is_primary: boolean;
+}
+
+/* Coverage scales, least to most covering - mirror backend-core catalog/enums.py. */
+export type NecklineModesty = "deep" | "moderate" | "high" | "closed";
+export type SleeveCoverage =
+  | "sleeveless" | "cap" | "short" | "elbow" | "three_quarter" | "full" | "extra_long";
+export type BackCoverage = "open" | "deep" | "moderate" | "full";
+export type SlitCoverage = "thigh" | "knee" | "mid_calf" | "ankle" | "none";
+
 export interface ProductDetail extends ProductSummary {
   readonly description: string;
   readonly care_instructions: string;
   readonly variants: readonly ProductVariant[];
+  readonly category: { readonly name: string; readonly slug: string };
+  readonly images: readonly ProductImage[];
+  readonly neckline_modesty: NecklineModesty;
+  readonly sleeve_coverage: SleeveCoverage;
+  readonly back_coverage: BackCoverage;
+  readonly slit_coverage: SlitCoverage;
+  readonly is_opaque: boolean;
+  readonly has_full_lining: boolean;
+  readonly requires_slip: boolean;
+  readonly is_sheer_overlay_only: boolean;
+  readonly rating_average: number | null;
+  readonly rating_count: number;
+  readonly bespoke_surcharge: string;
 }
 
 export interface Paginated<T> {

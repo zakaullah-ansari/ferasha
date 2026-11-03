@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 
 import { AtelierStory } from "@/components/home/AtelierStory";
-import { FeaturedEdit } from "@/components/home/FeaturedEdit";
 import { Hero } from "@/components/home/Hero";
 import { ModestyPromise } from "@/components/home/ModestyPromise";
 import { OccasionTiles } from "@/components/home/OccasionTiles";
+import { ProductRail } from "@/components/product/ProductRail";
 import { MobileNav } from "@/components/site/MobileNav";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -35,7 +35,9 @@ const guest = () => mockFetch([{ path: "/api/v1/auth/me/", status: 401, body: {}
 export const Header: Story = { beforeEach: guest, render: () => <SiteHeader /> };
 export const HeroSection: Story = { render: () => <Hero /> };
 export const Occasions: Story = { render: () => <OccasionTiles /> };
-export const Edit: Story = { render: () => <FeaturedEdit products={EDIT} /> };
+export const Edit: Story = {
+  render: () => <ProductRail eyebrow="The edit" title="New this season" products={EDIT} href="/products" />,
+};
 export const PromiseSection: Story = { render: () => <ModestyPromise /> };
 export const Atelier: Story = { render: () => <AtelierStory /> };
 export const Footer: Story = { render: () => <SiteFooter /> };

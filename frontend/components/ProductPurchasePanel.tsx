@@ -104,7 +104,9 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      {/* On phones the actions pin to the bottom of the screen, within thumb
+          reach however far the shopper has scrolled; inline from md up. */}
+      <div className="flex gap-3 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:border-t max-md:bg-background/95 max-md:p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:backdrop-blur-md">
         <Button variant="outline" size="lg" className="flex-1" onClick={() => setOpen(true)}>
           {selection?.mode === "standard" ? `Size ${selection.size} · Change` : "Select your fit"}
         </Button>
