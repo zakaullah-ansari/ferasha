@@ -425,7 +425,12 @@ const TextAnimateBase = ({
         {...props}
       >
         {accessible && <span className="sr-only">{children}</span>}
-        {segments.map((segment, i) => (
+        {segments.map((segment, i) =>
+          // Whitespace stays plain text so lines wrap between words; as an
+          // inline-block it could land at the start of a line as an indent.
+          by === "word" && /^\s+$/.test(segment) ? (
+            segment
+          ) : (
           <motion.span
             key={`${by}-${segment}-${i}`}
             variants={finalVariants.item}
@@ -439,7 +444,8 @@ const TextAnimateBase = ({
           >
             {segment}
           </motion.span>
-        ))}
+          )
+        )}
       </MotionComponent>
     </AnimatePresence>
   )

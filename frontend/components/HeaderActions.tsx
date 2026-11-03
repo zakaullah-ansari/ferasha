@@ -50,6 +50,14 @@ export function HeaderActions() {
 
   return (
     <div className="flex items-center gap-2">
+      {/* Holds the link's space while the session check runs, so the header
+          does not shift when "Sign in" appears. */}
+      {user === undefined && (
+        <span aria-hidden="true" className="invisible inline-flex items-center gap-1.5 text-sm">
+          <User className="size-4" />
+          Sign in
+        </span>
+      )}
       {user === null && (
         <Link
           href="/account/sign-in"
