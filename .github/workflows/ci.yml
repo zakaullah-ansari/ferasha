@@ -78,5 +78,8 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      # Unit project only; Storybook browser tests need Playwright browsers.
       - run: pnpm test
+      # Every story renders (and its play steps pass) in real Chromium, so a
+      # component change that breaks a story fails the build.
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:storybook

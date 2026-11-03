@@ -1,28 +1,11 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
 
 import { CartDrawer } from "@/components/CartDrawer";
 import { HeaderActions } from "@/components/HeaderActions";
 import { ATELIER, TAGLINE } from "@/lib/brand";
+import { fontVariables } from "@/lib/fonts";
 
 import "./globals.css";
-
-/**
- * Self-hosted via next/font: no third-party font CDN, no render-blocking
- * request to fonts.googleapis.com, and no layout shift.
- */
-const display = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-display-serif",
-  display: "swap",
-});
-
-const ui = Inter({
-  subsets: ["latin"],
-  variable: "--font-ui-sans",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -46,7 +29,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-IN" className={`${display.variable} ${ui.variable}`}>
+    <html lang="en-IN" className={fontVariables}>
       <body className="min-h-dvh bg-background text-foreground antialiased">
         {/* Skip link: the first tab stop on every page. */}
         <a

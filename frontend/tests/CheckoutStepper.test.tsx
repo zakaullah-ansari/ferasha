@@ -13,39 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
 import type { CheckoutQuote } from "@/lib/api/types";
 
-const QUOTE: CheckoutQuote = {
-  currency: "INR",
-  lines: [
-    {
-      variant_id: "v-1",
-      sku: "SKU-1",
-      product_name: "Karachi Lawn Suit",
-      variant_label: "M / Ivory",
-      quantity: 1,
-      unit_price: "12000.00",
-      line_total: "12000.00",
-    },
-  ],
-  subtotal: "12000.00",
-  shipping_charge: "0.00",
-  tax: {
-    supply_type: "intra_state",
-    lines: [],
-    taxable_value: "12000.00",
-    cgst_total: "1080.00",
-    sgst_total: "1080.00",
-    igst_total: "0.00",
-    tax_total: "2160.00",
-    grand_total: "14160.00",
-    is_zero_rated_export: false,
-    regime: "GST 2.0",
-    notes: [],
-  },
-  tax_total: "2160.00",
-  grand_total: "14160.00",
-};
-
-const ORDER = { order_number: "FER-ABC123", status: "placed", grand_total: "14160.00", currency: "INR" };
+import { ORDER, QUOTE } from "./fixtures/commerce";
 
 function respond(status: number, body: unknown) {
   return Promise.resolve(new Response(JSON.stringify(body), { status }));

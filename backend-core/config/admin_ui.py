@@ -30,12 +30,46 @@ def _item(title, icon: str, app_label: str, model: str) -> dict:
     }
 
 
-#: Kausar Dezine Studio forest green (#307439 = oklch 50% 0.114 146.187) as the
-#: primary ramp; 600 - the shade unfold paints buttons with - is the brand
-#: value itself, which carries white text at 5.7:1. The neutral base is the
-#: storefront's warm olive grey rather than unfold's default cool slate.
-_PRIMARY_HUE = "146.187"
-_BASE_HUE = "106.5"
+#: The storefront's colours, copied verbatim from frontend/app/globals.css
+#: (:root --primary and --foreground). That file is the single source of truth
+#: - it is what browsers paint and what the contrast tests check - and
+#: frontend/tests/admin-theme-sync.test.ts fails if these two drift from it.
+#: Every admin shade below is derived from them, never typed by hand.
+STOREFRONT_PRIMARY = "oklch(0.5 0.114 146.187)"  # Kausar Dezine Studio green
+STOREFRONT_FOREGROUND = "oklch(0.153 0.006 107.1)"  # warm olive ink
+
+_STEPS = ("50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950")
+
+
+def _lch(oklch: str) -> tuple[float, float, float]:
+    lightness, chroma, hue = oklch.removeprefix("oklch(").removesuffix(")").split()
+    return float(lightness), float(chroma), float(hue)
+
+
+def _primary_ramp(oklch: str) -> dict[str, str]:
+    """Tints and shades around the brand colour, which sits at 600 exactly:
+    600 is the shade unfold paints buttons with, so they are the storefront's
+    own primary and carry white text at the same contrast (5.7:1)."""
+    lightness, chroma, hue = _lch(oklch)
+    lightnesses = (0.976, 0.946, 0.898, 0.824, 0.68, 0.57, lightness, 0.45, 0.40, 0.34, 0.26)
+    # Chroma relative to the brand: muted tints, full colour in the mid-range.
+    chroma_scale = (0.16, 0.32, 0.57, 0.86, 1.05, 1.09, 1.0, 0.92, 0.83, 0.70, 0.54)
+    return {
+        step: f"oklch({l_ * 100:.1f}% {chroma * k:.3f} {hue})"
+        for step, l_, k in zip(_STEPS, lightnesses, chroma_scale, strict=True)
+    }
+
+
+def _neutral_ramp(oklch: str) -> dict[str, str]:
+    """Greys carrying the storefront ink's warm olive hue instead of
+    unfold's default cool slate; 950 is the ink itself."""
+    lightness, _chroma, hue = _lch(oklch)
+    lightnesses = (0.988, 0.966, 0.93, 0.87, 0.707, 0.54, 0.445, 0.37, 0.26, 0.21, lightness)
+    chromas = (0.003, 0.005, 0.007, 0.009, 0.014, 0.02, 0.018, 0.015, 0.012, 0.01, 0.006)
+    return {
+        step: f"oklch({l_ * 100:.1f}% {c:.3f} {hue})"
+        for step, l_, c in zip(_STEPS, lightnesses, chromas, strict=True)
+    }
 
 UNFOLD = {
     "SITE_TITLE": "Ferasha Atelier",
@@ -47,32 +81,8 @@ UNFOLD = {
     "SHOW_VIEW_ON_SITE": False,
     "ENVIRONMENT": "config.admin_ui.environment_callback",
     "COLORS": {
-        "base": {
-            "50": f"oklch(98.8% .003 {_BASE_HUE})",
-            "100": f"oklch(96.6% .005 {_BASE_HUE})",
-            "200": f"oklch(93% .007 {_BASE_HUE})",
-            "300": f"oklch(87% .009 {_BASE_HUE})",
-            "400": f"oklch(70.7% .014 {_BASE_HUE})",
-            "500": f"oklch(54% .02 {_BASE_HUE})",
-            "600": f"oklch(44.5% .018 {_BASE_HUE})",
-            "700": f"oklch(37% .015 {_BASE_HUE})",
-            "800": f"oklch(26% .012 {_BASE_HUE})",
-            "900": f"oklch(21% .01 {_BASE_HUE})",
-            "950": f"oklch(15.3% .006 {_BASE_HUE})",
-        },
-        "primary": {
-            "50": f"oklch(97.6% .018 {_PRIMARY_HUE})",
-            "100": f"oklch(94.6% .036 {_PRIMARY_HUE})",
-            "200": f"oklch(89.8% .065 {_PRIMARY_HUE})",
-            "300": f"oklch(82.4% .098 {_PRIMARY_HUE})",
-            "400": f"oklch(68% .12 {_PRIMARY_HUE})",
-            "500": f"oklch(57% .124 {_PRIMARY_HUE})",
-            "600": f"oklch(50% .114 {_PRIMARY_HUE})",
-            "700": f"oklch(45% .105 {_PRIMARY_HUE})",
-            "800": f"oklch(40% .095 {_PRIMARY_HUE})",
-            "900": f"oklch(34% .08 {_PRIMARY_HUE})",
-            "950": f"oklch(26% .062 {_PRIMARY_HUE})",
-        },
+        "base": _neutral_ramp(STOREFRONT_FOREGROUND),
+        "primary": _primary_ramp(STOREFRONT_PRIMARY),
     },
     "SIDEBAR": {
         "show_search": True,

@@ -210,3 +210,13 @@ def test_logging_in_directly_at_the_admin_login_lands_on_the_dashboard(client, s
 
     assert response.status_code == 302
     assert response["Location"] == reverse("admin:index")
+
+
+def test_admin_colours_are_derived_from_the_storefront():
+    """Buttons are the storefront primary itself; greys carry its ink's hue."""
+    from config.admin_ui import UNFOLD
+
+    primary, base = UNFOLD["COLORS"]["primary"], UNFOLD["COLORS"]["base"]
+    assert primary["600"] == "oklch(50.0% 0.114 146.187)"
+    assert base["950"] == "oklch(15.3% 0.006 107.1)"
+    assert len(primary) == len(base) == 11

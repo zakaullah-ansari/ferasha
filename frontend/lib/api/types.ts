@@ -4,8 +4,11 @@
  * Hand-written for the surfaces the storefront actually consumes rather than
  * generated wholesale from the OpenAPI schema: the generated client is a
  * build-step dependency on a running backend, which is the wrong trade for a
- * handful of read endpoints. `tests/api-contract.test.ts` validates these
- * shapes against live API responses so they cannot rot silently.
+ * handful of read endpoints.
+ *
+ * Nothing yet checks these against live API responses, so they can drift from
+ * the serializers silently. The shared fixtures in tests/fixtures/commerce.ts
+ * are typed against them, which catches drift on this side only.
  */
 
 /** A modesty badge or advisory, as derived by the Phase 1 backend. */
