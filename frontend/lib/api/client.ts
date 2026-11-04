@@ -12,8 +12,10 @@
  */
 
 import type {
+  Category,
   CheckoutQuote,
   DeliveryAddress,
+  Facets,
   Paginated,
   PlacedOrder,
   ProductDetail,
@@ -44,6 +46,22 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+}
+
+/** A repeated key (`?occasion=eid&occasion=nikah`) is how the API takes several values. */
+type QueryParams =
+  | URLSearchParams
+  | Readonly<Record<string, string | number | readonly string[] | undefined>>;
+
+function toQuery(params: QueryParams): string {
+  const query = new URLSearchParams();
+  const entries = params instanceof URLSearchParams ? params.entries() : Object.entries(params);
+  for (const [key, value] of entries) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item !== undefined && item !== "") query.append(key, String(item));
+    }
+  }
+  return query.size > 0 ? `?${query}` : "";
 }
 
 interface RequestOptions {
@@ -126,15 +144,16 @@ async function send<T>(path: string, options: SendOptions = {}, retried = false)
 }
 
 export const api = {
-  listProducts(
-    params: Readonly<Record<string, string | number | undefined>> = {},
-  ): Promise<Paginated<ProductSummary>> {
-    const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== "") query.set(key, String(value));
-    }
-    const suffix = query.size > 0 ? `?${query}` : "";
-    return get<Paginated<ProductSummary>>(`/api/v1/catalog/products/${suffix}`);
+  listProducts(params: QueryParams = {}): Promise<Paginated<ProductSummary>> {
+    return get<Paginated<ProductSummary>>(`/api/v1/catalog/products/${toQuery(params)}`);
+  },
+
+  getFacets(params: QueryParams = {}): Promise<Facets> {
+    return get<Facets>(`/api/v1/catalog/products/facets/${toQuery(params)}`);
+  },
+
+  getCategory(slug: string): Promise<Category> {
+    return get<Category>(`/api/v1/catalog/categories/${encodeURIComponent(slug)}/`);
   },
 
   getProduct(slug: string): Promise<ProductDetail> {

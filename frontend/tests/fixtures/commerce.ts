@@ -9,6 +9,7 @@
 
 import type {
   CheckoutQuote,
+  Facets,
   PlacedOrder,
   ProductDetail,
   SessionUser,
@@ -115,3 +116,44 @@ export const BAG: CartItem[] = [
   { variantId: "v-m-ivory", name: PRODUCT.name, price: 12000, quantity: 1, image: "", colour: "Ivory", size: "M" },
   { variantId: "v-m-sage", name: PRODUCT.name, price: 12500, quantity: 2, image: "", colour: "Sage", size: "M" },
 ];
+
+/** Filter counts for the whole catalogue, as /catalog/products/facets/ returns them. */
+export const FACETS: Facets = {
+  occasion: [
+    { value: "bridal", label: "Bridal", count: 3 },
+    { value: "nikah", label: "Nikah", count: 1 },
+    { value: "walima", label: "Walima", count: 1 },
+    { value: "eid", label: "Eid", count: 1 },
+    { value: "party", label: "Party", count: 1 },
+    { value: "casual", label: "Casual / Daily", count: 2 },
+  ],
+  garment_type: [
+    { value: "suit_set", label: "Suit / Kameez set", count: 4 },
+    { value: "lehenga", label: "Lehenga", count: 2 },
+    { value: "gharara", label: "Gharara", count: 2 },
+    { value: "blouse", label: "Blouse", count: 1 },
+  ],
+  fabric: [
+    { value: "lawn", label: "Lawn", count: 1 },
+    { value: "chiffon", label: "Chiffon", count: 1 },
+    { value: "raw_silk", label: "Raw silk", count: 2 },
+    { value: "velvet", label: "Velvet", count: 1 },
+    { value: "cotton", label: "Cotton", count: 2 },
+  ],
+  work_type: [
+    { value: "zardozi", label: "Zardozi", count: 2 },
+    { value: "gota_patti", label: "Gota patti", count: 2 },
+    { value: "chikankari", label: "Chikankari", count: 2 },
+  ],
+  slit_coverage: [{ value: "none", label: "No slit", count: 5 }],
+  sleeve_coverage: [{ value: "full", label: "Full length", count: 5 }],
+  modesty: [
+    { value: "fully_covered", label: "Fully covered", count: 4 },
+    { value: "has_full_lining", label: "Fully lined", count: 6 },
+    { value: "is_opaque", label: "Opaque fabric", count: 7 },
+    { value: "full_sleeves", label: "Full sleeves", count: 5 },
+    { value: "no_slit", label: "No slit", count: 0 },
+  ],
+  supports_bespoke: 5,
+  total: 9,
+};

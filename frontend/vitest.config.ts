@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
+import { normalizePath } from "vite";
 import { defineConfig } from "vitest/config";
 import path from 'node:path';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
@@ -11,7 +12,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./", import.meta.url))
+      // Forward slashes: Storybook's next/image plugin writes this path into
+      // generated source unescaped; on Windows the "\f" of "\ferasha" became a form feed.
+      "@": normalizePath(fileURLToPath(new URL("./", import.meta.url)))
     }
   },
   test: {

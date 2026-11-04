@@ -100,6 +100,39 @@ export interface ProductDetail extends ProductSummary {
   readonly bespoke_surcharge: string;
 }
 
+/** One option of a filter facet, with how many garments it would show. */
+export interface FacetOption {
+  readonly value: string;
+  readonly label: string;
+  readonly count: number;
+}
+
+/**
+ * Filter counts for the current selection (/catalog/products/facets/).
+ *
+ * A facet's counts ignore its own selection but follow every other one, so
+ * picking Eid keeps Bridal in view with the number it would add.
+ */
+export interface Facets {
+  readonly occasion: readonly FacetOption[];
+  readonly garment_type: readonly FacetOption[];
+  readonly fabric: readonly FacetOption[];
+  readonly work_type: readonly FacetOption[];
+  readonly slit_coverage: readonly FacetOption[];
+  readonly sleeve_coverage: readonly FacetOption[];
+  /** Always all five modesty switches, including those with no garments. */
+  readonly modesty: readonly FacetOption[];
+  readonly supports_bespoke: number;
+  readonly total: number;
+}
+
+export interface Category {
+  readonly id: string;
+  readonly name: string;
+  readonly slug: string;
+  readonly description: string;
+}
+
 export interface Paginated<T> {
   readonly count: number;
   readonly next: string | null;
