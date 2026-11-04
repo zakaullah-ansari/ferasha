@@ -66,6 +66,11 @@ class CustomerOrderEventSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+def _back_office(serializer: serializers.Serializer) -> bool:
+    request = serializer.context.get("request")
+    return bool(request and request.user.is_authenticated and request.user.is_back_office)
+
+
 def customer_name(order: Order) -> str:
     """Who the order is for: the account holder, else the guest's recipient or email."""
     if order.customer_id:
@@ -86,7 +91,8 @@ class OrderListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_customer_name(self, order: Order) -> str:
-        return customer_name(order)
+        # Tailors read atelier orders too; who the customer is stays with the back office.
+        return customer_name(order) if _back_office(self) else ""
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
@@ -125,7 +131,9 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         return sorted(available_transitions(obj.status))
 
     def get_customer_name(self, obj) -> str:
-        return customer_name(obj)
+        return customer_name(obj) if _back_office(self) else ""
 
     def get_contact_email(self, obj) -> str:
+        if not _back_office(self):
+            return ""
         return obj.customer.email if obj.customer_id else obj.guest_email

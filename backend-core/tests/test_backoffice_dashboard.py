@@ -154,6 +154,7 @@ class TestWhatNeedsAttention:
         recent = staff_client.get(SUMMARY).json()["recent_orders"]
 
         assert [row["order_number"] for row in recent] == [second.order_number, first.order_number]
+        assert recent[0]["customer_name"] == "guest@example.com"  # the back office sees who
 
 
 ORDERS = reverse("orders:order-list")
@@ -220,3 +221,32 @@ class TestOrderDetailForTheBackOffice:
 
         assert (data["customer_name"], data["contact_email"]) == ("Ayesha Khan", "ayesha@example.com")
         assert "in_atelier" in data["next_statuses"]
+
+
+class TestTheAtelierSeesTheWorkNotTheCustomer:
+    """Tailors read orders in the atelier; who the customer is stays with the back office."""
+
+    @pytest.fixture
+    def tailor_client(self):
+        return _client_for(make_user(role="tailor"))
+
+    @pytest.fixture
+    def stitching(self):
+        ayesha = make_user(full_name="Ayesha Khan", email="ayesha@example.com")
+        return order(S.STITCHING, "1000.00", NOW, customer=ayesha, guest_email="")
+
+    def test_no_name_or_email_in_the_list_or_after_moving_an_order(self, tailor_client, stitching):
+        row = tailor_client.get(ORDERS).json()["results"][0]
+        moved = tailor_client.post(
+            reverse("orders:order-transition", args=[stitching.order_number]),
+            {"status": "quality_check"},
+            format="json",
+        )
+
+        assert row["customer_name"] == ""
+        assert moved.status_code == 200
+        assert (moved.json()["customer_name"], moved.json()["contact_email"]) == ("", "")
+
+    def test_cannot_search_by_customer(self, tailor_client, stitching):
+        assert tailor_client.get(ORDERS, {"search": "ayesha@example.com"}).json()["count"] == 0
+        assert tailor_client.get(ORDERS, {"search": stitching.order_number}).json()["count"] == 1

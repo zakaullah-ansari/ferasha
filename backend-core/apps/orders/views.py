@@ -30,8 +30,15 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated, IsOwnerOrBackOffice)
     lookup_field = "order_number"
     filterset_class = OrderFilter
-    # Applied after get_queryset's scoping, so a customer only searches their own orders.
-    search_fields = ("order_number", "customer__full_name", "customer__email", "guest_email")
+
+    @property
+    def search_fields(self) -> tuple[str, ...]:
+        """Applied after get_queryset's scoping. Searching by customer is for the back
+        office only: a tailor could otherwise test which emails have orders."""
+        user = self.request.user
+        if user.is_authenticated and user.is_back_office:
+            return ("order_number", "customer__full_name", "customer__email", "guest_email")
+        return ("order_number",)
 
     def get_queryset(self):
         user = self.request.user

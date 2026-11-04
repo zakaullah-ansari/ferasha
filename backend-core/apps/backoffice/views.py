@@ -20,4 +20,4 @@ class DashboardSummaryView(APIView):
 
     @extend_schema(summary="Owner dashboard: revenue, open orders by stage, queues")
     def get(self, request):
-        return Response(dashboard_summary())
+        return Response(dashboard_summary(request))

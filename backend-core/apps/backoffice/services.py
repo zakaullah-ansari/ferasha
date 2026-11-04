@@ -34,7 +34,7 @@ def _money(value: Decimal | None) -> str:
     return str((value or Decimal("0")).quantize(Decimal("0.01")))
 
 
-def dashboard_summary() -> dict:
+def dashboard_summary(request) -> dict:
     zone = timezone.get_current_timezone()
     today = timezone.localtime(timezone.now(), zone).date()
 
@@ -119,5 +119,5 @@ def dashboard_summary() -> dict:
             }
             for variant in low_stock
         ],
-        "recent_orders": OrderListSerializer(recent, many=True).data,
+        "recent_orders": OrderListSerializer(recent, many=True, context={"request": request}).data,
     }
