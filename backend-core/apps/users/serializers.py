@@ -133,6 +133,8 @@ class UserSerializer(serializers.ModelSerializer):
     """Read/update representation of the authenticated user."""
 
     addresses = AddressSerializer(many=True, read_only=True)
+    #: The one rule (role or is_staff) the storefront uses to offer the dashboard.
+    is_back_office = serializers.BooleanField(read_only=True)
     email_verified = serializers.BooleanField(source="email_is_verified", read_only=True)
 
     class Meta:
@@ -143,13 +145,14 @@ class UserSerializer(serializers.ModelSerializer):
             "full_name",
             "phone",
             "role",
+            "is_back_office",
             "preferences",
             "email_verified",
             "addresses",
             "date_joined",
             "created_at",
         )
-        read_only_fields = ("id", "email", "role", "email_verified", "date_joined", "created_at")
+        read_only_fields = ("id", "email", "role", "is_back_office", "email_verified", "date_joined", "created_at")
 
     def validate_preferences(self, value: Any) -> dict[str, Any]:
         if not isinstance(value, dict):

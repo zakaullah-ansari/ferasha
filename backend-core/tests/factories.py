@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.catalog.enums import (
     BackCoverage,
@@ -19,6 +20,7 @@ from apps.catalog.enums import (
     WorkType,
 )
 from apps.catalog.models import Category, Product, ProductVariant
+from apps.media_assets.models import MediaAsset
 from apps.users.models import UserRole
 
 User = get_user_model()
@@ -94,3 +96,15 @@ def make_variant(product=None, **kw):
     )
     defaults.update(kw)
     return ProductVariant.objects.create(**defaults)
+
+
+def make_asset(**kw):
+    defaults = dict(
+        uploaded_by=make_vendor(),
+        original=SimpleUploadedFile("photo.jpg", b"fake-image-bytes"),
+        checksum="a" * 64,
+        content_type="image/jpeg",
+        byte_size=1024,
+    )
+    defaults.update(kw)
+    return MediaAsset.objects.create(**defaults)

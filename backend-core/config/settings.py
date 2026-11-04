@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "apps.cart",
     "apps.checkout",
     "apps.payments",
+    "apps.backoffice",
 ]
 
 MIDDLEWARE = [

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import django_filters as filters
 from django.db.models import Count
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -11,14 +12,26 @@ from rest_framework.response import Response
 
 from apps.common.permissions import IsAtelierOrBackOffice, IsOwnerOrBackOffice
 
-from .models import Order
+from .models import Order, OrderStatus
 from .serializers import OrderDetailSerializer, OrderListSerializer
 from .state_machine import IllegalTransition, transition_order
+
+
+class OrderFilter(filters.FilterSet):
+    #: Several stages at once: the dashboard's "To start" tab is more than one.
+    status = filters.MultipleChoiceFilter(choices=OrderStatus.choices)
+
+    class Meta:
+        model = Order
+        fields: list[str] = []
 
 
 class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated, IsOwnerOrBackOffice)
     lookup_field = "order_number"
+    filterset_class = OrderFilter
+    # Applied after get_queryset's scoping, so a customer only searches their own orders.
+    search_fields = ("order_number", "customer__full_name", "customer__email", "guest_email")
 
     def get_queryset(self):
         user = self.request.user

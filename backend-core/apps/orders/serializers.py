@@ -66,16 +66,27 @@ class CustomerOrderEventSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+def customer_name(order: Order) -> str:
+    """Who the order is for: the account holder, else the guest's recipient or email."""
+    if order.customer_id:
+        return order.customer.full_name
+    return (order.shipping_address or {}).get("recipient_name") or order.guest_email
+
+
 class OrderListSerializer(serializers.ModelSerializer):
     line_count = serializers.IntegerField(read_only=True, required=False)
+    customer_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = (
             "id", "order_number", "status", "currency", "grand_total",
-            "line_count", "placed_at", "created_at",
+            "line_count", "customer_name", "placed_at", "created_at",
         )
         read_only_fields = fields
+
+    def get_customer_name(self, order: Order) -> str:
+        return customer_name(order)
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
@@ -83,11 +94,13 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     tax_snapshot = OrderTaxSnapshotSerializer(read_only=True)
     events = serializers.SerializerMethodField()
     next_statuses = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+    contact_email = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = (
-            "id", "order_number", "status", "currency",
+            "id", "order_number", "status", "currency", "customer_name", "contact_email",
             "place_of_supply_state", "place_of_supply_country", "supply_type",
             "supply_date", "shipping_address", "billing_address", "customer_gstin",
             "subtotal", "discount_total", "shipping_charge", "tax_total", "grand_total",
@@ -110,3 +123,9 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         if not (request and request.user.is_authenticated and request.user.is_back_office):
             return []
         return sorted(available_transitions(obj.status))
+
+    def get_customer_name(self, obj) -> str:
+        return customer_name(obj)
+
+    def get_contact_email(self, obj) -> str:
+        return obj.customer.email if obj.customer_id else obj.guest_email

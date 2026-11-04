@@ -14,21 +14,9 @@ from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 
 from apps.media_assets.models import MediaAsset, ModerationStatus
-from tests.factories import make_vendor
+from tests.factories import make_asset
 
 pytestmark = pytest.mark.django_db
-
-
-def make_asset(**kw):
-    defaults = dict(
-        uploaded_by=make_vendor(),
-        original=SimpleUploadedFile("photo.jpg", b"fake-image-bytes"),
-        checksum="a" * 64,
-        content_type="image/jpeg",
-        byte_size=1024,
-    )
-    defaults.update(kw)
-    return MediaAsset.objects.create(**defaults)
 
 
 class TestDefaultsAreFailClosed:

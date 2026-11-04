@@ -48,6 +48,20 @@ STOCK_COMMITTED_STATUSES = frozenset(
 )
 
 
+#: Paid and not given back: what counts as revenue. A placed order is a
+#: promise, not money; a return in progress is still money until it arrives.
+REVENUE_STATUSES = frozenset(
+    {S.PAYMENT_CONFIRMED, S.MEASUREMENT_REVIEW, S.IN_ATELIER, S.STITCHING,
+     S.QUALITY_CHECK, S.PACKED, S.SHIPPED, S.DELIVERED, S.RETURN_REQUESTED}
+)
+
+#: Orders someone still has to act on, in the order the work happens.
+OPEN_STATUSES: tuple[str, ...] = (
+    S.PLACED, S.PAYMENT_CONFIRMED, S.MEASUREMENT_REVIEW, S.IN_ATELIER,
+    S.STITCHING, S.QUALITY_CHECK, S.PACKED, S.SHIPPED, S.RETURN_REQUESTED,
+)
+
+
 class IllegalTransition(ValueError):
     """Raised when a requested order state change is not permitted."""
 
