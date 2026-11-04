@@ -17,7 +17,15 @@ from apps.common.permissions import PublicReadBackOfficeWrite, PublicReadVendorW
 from apps.media_assets.models import ModerationStatus
 from apps.reviews.models import ReviewStatus
 
-from .enums import ProductStatus
+from .enums import (
+    Fabric,
+    GarmentType,
+    Occasion,
+    ProductStatus,
+    SleeveCoverage,
+    SlitCoverage,
+    WorkType,
+)
 from .filters import ProductFilter
 from .models import Category, Product, ProductImage, ProductVariant
 from .serializers import (
@@ -130,23 +138,40 @@ class ProductViewSet(viewsets.ModelViewSet):
         """
         qs = self.filter_queryset(self.get_queryset())
 
-        def tally(field: str) -> dict[str, int]:
-            rows = qs.values(field).annotate(n=Count("id", distinct=True))
-            return {row[field]: row["n"] for row in rows if row[field]}
+        def tally(field: str, choices) -> list[dict[str, object]]:
+            """Options with their labels and counts, in the enum's own order.
 
+            order_by() first: the list queryset carries an explicit ordering,
+            and Django adds ordering columns to a values() GROUP BY - every
+            product would become its own group and every count would be 1.
+            """
+            rows = qs.order_by().values(field).annotate(n=Count("id", distinct=True))
+            counts = {row[field]: row["n"] for row in rows if row[field]}
+            return [
+                {"value": value, "label": str(label), "count": counts[value]}
+                for value, label in choices
+                if counts.get(value)
+            ]
+
+        modesty = [
+            ("fully_covered", "Fully covered", qs.fully_covered().count()),
+            ("has_full_lining", "Fully lined", qs.filter(has_full_lining=True).count()),
+            ("is_opaque", "Opaque fabric", qs.filter(is_opaque=True).count()),
+            ("full_sleeves", "Full sleeves", qs.full_sleeves().count()),
+            ("no_slit", "No slit", qs.no_slit().count()),
+        ]
         return Response(
             {
-                "fabric": tally("fabric"),
-                "work_type": tally("work_type"),
-                "occasion": tally("occasion"),
-                "garment_type": tally("garment_type"),
-                "slit_coverage": tally("slit_coverage"),
-                "sleeve_coverage": tally("sleeve_coverage"),
-                "modesty": {
-                    "fully_covered": qs.fully_covered().count(),
-                    "is_opaque": qs.filter(is_opaque=True).count(),
-                    "has_full_lining": qs.filter(has_full_lining=True).count(),
-                },
+                "fabric": tally("fabric", Fabric.choices),
+                "work_type": tally("work_type", WorkType.choices),
+                "occasion": tally("occasion", Occasion.choices),
+                "garment_type": tally("garment_type", GarmentType.choices),
+                "slit_coverage": tally("slit_coverage", SlitCoverage.choices),
+                "sleeve_coverage": tally("sleeve_coverage", SleeveCoverage.choices),
+                "modesty": [
+                    {"value": value, "label": label, "count": count}
+                    for value, label, count in modesty
+                ],
                 "supports_bespoke": qs.filter(supports_bespoke=True).count(),
                 "total": qs.count(),
             }

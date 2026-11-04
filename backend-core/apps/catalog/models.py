@@ -108,6 +108,12 @@ class ProductQuerySet(models.QuerySet):
         """Active products with at least one variant in stock."""
         return self.active().filter(variants__stock_quantity__gt=0).distinct()
 
+    def full_sleeves(self):
+        return self.filter(sleeve_coverage__in=[SleeveCoverage.FULL, SleeveCoverage.EXTRA_LONG])
+
+    def no_slit(self):
+        return self.filter(slit_coverage=SlitCoverage.NONE)
+
     def fully_covered(self):
         """Products qualifying for the FULL_COVERAGE badge.
 

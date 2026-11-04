@@ -87,14 +87,12 @@ class ProductFilter(filters.FilterSet):
     def filter_full_sleeves(self, queryset, name, value):
         if not value:
             return queryset
-        return queryset.filter(
-            sleeve_coverage__in=[SleeveCoverage.FULL, SleeveCoverage.EXTRA_LONG]
-        )
+        return queryset.full_sleeves()
 
     def filter_no_slit(self, queryset, name, value):
         if not value:
             return queryset
-        return queryset.filter(slit_coverage=SlitCoverage.NONE)
+        return queryset.no_slit()
 
     def filter_in_stock(self, queryset, name, value):
         if not value:
