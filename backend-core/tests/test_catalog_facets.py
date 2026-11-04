@@ -60,4 +60,18 @@ def test_counts_follow_the_active_filters(api_client, catalogue):
     data = api_client.get(FACETS, {"occasion": "eid"}).json()
 
     assert data["total"] == 1
-    assert [o["value"] for o in data["occasion"]] == ["eid"]
+    assert {o["value"]: o["count"] for o in data["sleeve_coverage"]} == {"elbow": 1}
+
+
+def test_a_facet_ignores_its_own_selection(api_client, catalogue):
+    """Picking Eid must not hide Bridal: options within a facet are OR-ed, so
+    the shopper needs to see the siblings to add one."""
+    data = api_client.get(FACETS, {"occasion": "eid"}).json()
+
+    assert {o["value"]: o["count"] for o in data["occasion"]} == {"bridal": 3, "eid": 1}
+
+
+def test_a_facet_still_follows_the_other_selections(api_client, catalogue):
+    data = api_client.get(FACETS, {"sleeve_coverage": "elbow"}).json()
+
+    assert {o["value"]: o["count"] for o in data["occasion"]} == {"eid": 1}

@@ -136,7 +136,19 @@ class ProductViewSet(viewsets.ModelViewSet):
         Naive per-value counting would issue dozens of queries on the busiest
         page of the site.
         """
-        qs = self.filter_queryset(self.get_queryset())
+        base = self.get_queryset()
+        # Validates the parameters (400 on a bad value) as the list does.
+        qs = self.filter_queryset(base)
+
+        def without(field: str):
+            """Every selection except this facet's own.
+
+            Options within a facet are OR-ed, so picking Eid must not hide
+            Bridal: the shopper needs the siblings in view to add one.
+            """
+            params = request.query_params.copy()
+            params.pop(field, None)
+            return self.filterset_class(params, queryset=base, request=request).qs
 
         def tally(field: str, choices) -> list[dict[str, object]]:
             """Options with their labels and counts, in the enum's own order.
@@ -145,7 +157,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             and Django adds ordering columns to a values() GROUP BY - every
             product would become its own group and every count would be 1.
             """
-            rows = qs.order_by().values(field).annotate(n=Count("id", distinct=True))
+            rows = without(field).order_by().values(field).annotate(n=Count("id", distinct=True))
             counts = {row[field]: row["n"] for row in rows if row[field]}
             return [
                 {"value": value, "label": str(label), "count": counts[value]}
