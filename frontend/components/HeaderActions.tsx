@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, User } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -69,6 +69,12 @@ export function HeaderActions() {
       )}
       {user && (
         <div className="flex items-center gap-3 text-sm">
+          {user.is_back_office && (
+            <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline">
+              <LayoutDashboard className="size-4" aria-hidden="true" />
+              Dashboard
+            </Link>
+          )}
           <span className="hidden text-muted-foreground sm:inline">
             {user.full_name.split(" ")[0] || user.email}
           </span>

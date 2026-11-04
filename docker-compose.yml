@@ -158,6 +158,7 @@ services:
       AI_ENGINE_URL: http://ai-engine:8001
       NEXT_TELEMETRY_DISABLED: "1"
       CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
+      NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:-http://localhost:8000/admin}
     volumes:
       - ./frontend:/app
       - /app/node_modules

@@ -6,7 +6,6 @@ import {
   clearFilters,
   collectionTitle,
   facetOptions,
-  pageWindow,
   parseCatalogQuery,
   PRICE_PRESETS,
   toggleFacet,
@@ -17,6 +16,8 @@ import {
   withPage,
   withPrice,
 } from "@/lib/catalog-query";
+
+import { pageWindow } from "@/lib/pagination";
 
 import { FACETS } from "./fixtures/commerce";
 

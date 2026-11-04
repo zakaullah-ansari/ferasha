@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Facets } from "@/lib/api/types";
-import { activeFilters, clearFilters, pageWindow, SORTS, withOrdering, withPage } from "@/lib/catalog-query";
+import { activeFilters, clearFilters, SORTS, withOrdering, withPage } from "@/lib/catalog-query";
 import { cn } from "@/lib/cn";
+import { pageWindow } from "@/lib/pagination";
 
 import { useCatalogNavigation } from "./CatalogNavigation";
 

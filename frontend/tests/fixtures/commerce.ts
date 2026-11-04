@@ -110,6 +110,7 @@ export const CUSTOMER: SessionUser = {
   id: "u-1",
   email: "ayesha@example.com",
   full_name: "Ayesha Khan",
+  is_back_office: false,
 };
 
 export const BAG: CartItem[] = [

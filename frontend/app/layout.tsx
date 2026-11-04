@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 
-import { CartDrawer } from "@/components/CartDrawer";
-import { SiteFooter } from "@/components/site/SiteFooter";
-import { SiteHeader } from "@/components/site/SiteHeader";
 import { fontVariables } from "@/lib/fonts";
 
 import "./globals.css";
@@ -38,10 +35,8 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <SiteHeader />
-        <main id="main">{children}</main>
-        <SiteFooter />
-        <CartDrawer />
+        {/* Each route group brings its own chrome and its <main id="main">. */}
+        {children}
       </body>
     </html>
   );

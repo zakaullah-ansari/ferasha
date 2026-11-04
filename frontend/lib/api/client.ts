@@ -16,6 +16,7 @@ import type {
   CheckoutQuote,
   DeliveryAddress,
   Facets,
+  OrderDetail,
   Paginated,
   PlacedOrder,
   ProductDetail,
@@ -206,6 +207,16 @@ export const api = {
       items: ReadonlyArray<{ variant_id: string; quantity: number }>,
     ): Promise<{ skipped: string[] }> {
       return send("/api/v1/cart/merge/", { method: "POST", body: { items, replace: true } });
+    },
+  },
+
+  orders: {
+    /** Back office: move an order to its next stage. The API's state machine has the final say (409). */
+    transition(orderNumber: string, status: string, reason = ""): Promise<OrderDetail> {
+      return send(`/api/v1/orders/${encodeURIComponent(orderNumber)}/transition/`, {
+        method: "POST",
+        body: { status, reason },
+      });
     },
   },
 

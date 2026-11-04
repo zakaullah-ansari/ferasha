@@ -11,22 +11,9 @@ import { getAuthed, hasSession } from "@/lib/api/server";
 import type { OrderDetail } from "@/lib/api/types";
 import { ATELIER } from "@/lib/brand";
 import { formatINR } from "@/lib/format";
+import { orderStatus } from "@/lib/order-status";
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false } };
-
-/** Customer-facing wording for the order states a customer can be in. */
-const STATUS_LABEL: Record<string, string> = {
-  placed: "Awaiting payment",
-  payment_confirmed: "Payment received",
-  in_atelier: "In the atelier",
-  measurement_review: "Reviewing measurements",
-  stitching: "Being stitched",
-  quality_check: "Final quality check",
-  packed: "Packed",
-  shipped: "On its way",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
 
 async function loadOrder(orderNumber: string): Promise<OrderDetail> {
   try {
@@ -67,7 +54,7 @@ export default async function OrderPage({
         <p className="text-muted-foreground">
           Order <span className="font-medium text-foreground">{order.order_number}</span>
         </p>
-        <Badge variant="secondary">{STATUS_LABEL[order.status] ?? order.status}</Badge>
+        <Badge variant="secondary">{orderStatus(order.status).customer}</Badge>
       </header>
 
       <Card>

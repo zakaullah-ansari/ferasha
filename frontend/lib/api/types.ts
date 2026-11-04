@@ -218,6 +218,8 @@ export interface SessionUser {
   readonly id: string;
   readonly email: string;
   readonly full_name: string;
+  /** Staff or admin: may open the owner dashboard. Decided by the API, never here. */
+  readonly is_back_office: boolean;
 }
 
 /** Mirrors backend-core users.RegistrationSerializer. */
@@ -240,6 +242,30 @@ export interface OrderLine {
   readonly quantity: number;
   readonly unit_price: string;
   readonly gross: string;
+  readonly is_bespoke: boolean;
+}
+
+/** A status change. `actor_name` and `reason` are sent to the back office only. */
+export interface OrderEvent {
+  readonly id: number;
+  readonly from_status: string;
+  readonly to_status: string;
+  readonly actor_name?: string;
+  readonly reason?: string;
+  readonly created_at: string;
+}
+
+/** Mirrors backend-core orders.OrderListSerializer. */
+export interface OrderSummary {
+  readonly id: string;
+  readonly order_number: string;
+  readonly status: string;
+  readonly currency: string;
+  readonly grand_total: string;
+  readonly line_count: number;
+  readonly customer_name: string;
+  readonly placed_at: string | null;
+  readonly created_at: string;
 }
 
 /** Mirrors backend-core orders.OrderDetailSerializer (fields used here). */
@@ -260,4 +286,33 @@ export interface OrderDetail {
     readonly igst_total: string;
   } | null;
   readonly placed_at: string | null;
+  readonly customer_name: string;
+  readonly contact_email: string;
+  readonly customer_notes: string;
+  readonly events: readonly OrderEvent[];
+  /** Where the back office may move it next; empty for anyone else. */
+  readonly next_statuses: readonly string[];
+}
+
+/* ------------------------------------------------------------ back office */
+
+/** Mirrors backend-core backoffice.services.dashboard_summary. */
+export interface DashboardSummary {
+  readonly currency: string;
+  readonly revenue: { readonly month_to_date: string; readonly previous_period: string };
+  readonly orders: { readonly month_to_date: number; readonly previous_period: number };
+  readonly average_order_value: string | null;
+  readonly series: readonly { readonly date: string; readonly revenue: string; readonly orders: number }[];
+  /** Every open stage in working order, empty ones included. */
+  readonly pipeline: readonly { readonly status: string; readonly label: string; readonly count: number }[];
+  readonly moderation: { readonly reviews_pending: number; readonly photos_needing_review: number };
+  readonly low_stock: readonly {
+    readonly sku: string;
+    readonly product_name: string;
+    readonly product_slug: string;
+    readonly size: string;
+    readonly colour: string;
+    readonly stock_quantity: number;
+  }[];
+  readonly recent_orders: readonly OrderSummary[];
 }
