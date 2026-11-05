@@ -16,6 +16,7 @@ x-django-env: &django-env
   AI_ENGINE_URL: http://ai-engine:8001
   AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+  UNPAID_ORDER_TTL_MINUTES: ${UNPAID_ORDER_TTL_MINUTES:-30}
   RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
   RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
   RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
@@ -75,6 +76,23 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
+
+  # Housekeeping on a timer: releases the stock of orders left unpaid
+  # (orders.services.expire_unpaid_orders). In production, a cron job or
+  # systemd timer running the same command replaces this service.
+  scheduler:
+    build:
+      context: ./backend-core
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment: *django-env
+    volumes:
+      - ./backend-core:/app
+    depends_on:
+      backend-core:
+        condition: service_healthy
+    command: >
+      sh -c "while true; do python manage.py expire_unpaid_orders; sleep 300; done"
 
   ai-engine:
     build:

@@ -301,6 +301,10 @@ FERASHA_SHIPPING_DOMESTIC = Decimal("150.00")
 PAYMENT_GATEWAY = os.environ.get("PAYMENT_GATEWAY", "apps.payments.gateways.RazorpayGateway")
 # Empty values do not stop the boot (catalogue browsing needs no payments);
 # payment endpoints answer 503 until they are set.
+#: An order left unpaid this long is cancelled and its stock released
+#: (orders.services.expire_unpaid_orders, run on a schedule).
+UNPAID_ORDER_TTL_MINUTES = int(env("UNPAID_ORDER_TTL_MINUTES", "30"))
+
 RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 # Set per webhook in the Razorpay dashboard; distinct from the key secret.
