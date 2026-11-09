@@ -1,22 +1,33 @@
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import localFont from "next/font/local";
 
 /**
  * The storefront's two typefaces, defined once for the app and for Storybook.
  *
- * Self-hosted via next/font: no third-party font CDN, no render-blocking
- * request to fonts.googleapis.com, and no layout shift.
+ * Shipped with the site (app/fonts, from Fontsource 5.3.0, SIL Open Font
+ * Licence 1.1 - licences alongside) rather than fetched from Google at
+ * build time: building and the dev server no longer depend on reaching
+ * fonts.googleapis.com, which had failed and taken pages down with it.
+ * Still preloaded, swapped and size-adjusted by next/font: no layout shift.
  */
-export const display = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+export const display = localFont({
+  src: [
+    { path: "../app/fonts/cormorant-garamond-latin-300-normal.woff2", weight: "300", style: "normal" },
+    { path: "../app/fonts/cormorant-garamond-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../app/fonts/cormorant-garamond-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../app/fonts/cormorant-garamond-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-display-serif",
   display: "swap",
+  fallback: ["Georgia", "Times New Roman", "serif"],
 });
 
-export const ui = Inter({
-  subsets: ["latin"],
+export const ui = localFont({
+  // Inter's variable font: every weight from one file.
+  src: "../app/fonts/inter-latin-wght-normal.woff2",
+  weight: "100 900",
   variable: "--font-ui-sans",
   display: "swap",
+  fallback: ["system-ui", "Segoe UI", "Arial", "sans-serif"],
 });
 
 /** Class names that expose both fonts as the CSS variables globals.css reads. */
