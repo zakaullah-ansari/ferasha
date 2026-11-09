@@ -103,7 +103,15 @@ export function RegisterForm({ next }: { readonly next: string }) {
                 aria-describedby={errors.accept_terms ? "register-terms-error" : undefined}
               />
               <Label htmlFor="register-terms" className="font-normal leading-snug">
-                I accept the terms of service and privacy policy.
+                I accept the{" "}
+                <a href="/policies/terms" target="_blank" rel="noreferrer" className="underline underline-offset-4">
+                  terms of use
+                </a>{" "}
+                and the{" "}
+                <a href="/policies/privacy" target="_blank" rel="noreferrer" className="underline underline-offset-4">
+                  privacy policy
+                </a>
+                .
               </Label>
             </div>
             {errors.accept_terms && (

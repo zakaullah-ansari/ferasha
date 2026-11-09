@@ -32,6 +32,15 @@ export const OCCASIONS: readonly Occasion[] = [
   { label: "Everyday", href: "/products?occasion=casual", note: "Lawn and cotton for every day", tone: "muted" },
 ];
 
+/** Footer help links; the pages live in lib/policies.ts and app/(store)/contact. */
+export const HELP: readonly NavLink[] = [
+  { label: "Contact", href: "/contact" },
+  { label: "Shipping & delivery", href: "/policies/shipping" },
+  { label: "Returns & exchanges", href: "/policies/returns" },
+  { label: "Privacy", href: "/policies/privacy" },
+  { label: "Terms of use", href: "/policies/terms" },
+];
+
 /** Shortcut into the catalogue's strongest modesty filter. */
 export const FULLY_COVERED: NavLink = { label: "Shop fully covered", href: "/products?fully_covered=true" };
 

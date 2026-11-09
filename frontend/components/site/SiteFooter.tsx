@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 import { ATELIER, TAGLINE } from "@/lib/brand";
-import { FULLY_COVERED, OCCASIONS, PRIMARY_NAV } from "@/lib/navigation";
+import { FULLY_COVERED, HELP, OCCASIONS, PRIMARY_NAV } from "@/lib/navigation";
 
 export function SiteFooter() {
   return (
     // `dark` scopes the preset's dark palette to the footer, so the inverted
     // band uses the theme's own contrast-tested pairs rather than hand-picked ones.
     <footer className="dark mt-24 bg-background text-foreground">
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.4fr]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.4fr]">
         <div>
           <p className="font-display text-3xl">Ferasha</p>
           <p className="mt-1 text-sm text-muted-foreground">{TAGLINE}</p>
@@ -20,6 +20,7 @@ export function SiteFooter() {
 
         <FooterColumn title="Shop" links={[...PRIMARY_NAV, FULLY_COVERED]} />
         <FooterColumn title="Occasions" links={OCCASIONS} />
+        <FooterColumn title="Help" links={HELP} />
 
         <div className="text-sm">
           <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">The atelier</p>
@@ -39,7 +40,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border">
         <p className="mx-auto max-w-6xl px-5 py-6 text-xs text-muted-foreground">
-          Prices in INR, inclusive of GST where applicable.
+          Prices in INR. GST for your delivery address is added at checkout, before you pay.
         </p>
       </div>
     </footer>
