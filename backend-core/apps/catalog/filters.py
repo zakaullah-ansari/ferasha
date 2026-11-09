@@ -8,7 +8,6 @@ the query string.
 from __future__ import annotations
 
 import django_filters as filters
-from django.db.models import Q
 
 from .enums import (
     BackCoverage,
@@ -21,6 +20,7 @@ from .enums import (
     WorkType,
 )
 from .models import Category, Product
+from .search import search_products
 
 
 class ProductFilter(filters.FilterSet):
@@ -100,19 +100,7 @@ class ProductFilter(filters.FilterSet):
         return queryset.filter(variants__stock_quantity__gt=0).distinct()
 
     def filter_search(self, queryset, name, value):
-        """Domain-aware search.
-
-        Customers search 'gharara', 'farshi palazzo', 'chikankari' and misspell
-        all of them. Full Postgres FTS with a synonym dictionary arrives in
-        Phase 6; this is an honest icontains fallback that works on any backend.
-        """
-        term = value.strip()
-        if not term:
-            return queryset
-        return queryset.filter(
-            Q(name__icontains=term)
-            | Q(description__icontains=term)
-            | Q(fabric__icontains=term)
-            | Q(work_type__icontains=term)
-            | Q(category__name__icontains=term)
-        ).distinct()
+        """Every word, any order, spelling slips and regional variants
+        forgiven, most relevant first (an explicit ?ordering= still wins:
+        it is applied after this filter). See catalog/search.py."""
+        return search_products(queryset, value)
