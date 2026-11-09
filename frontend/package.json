@@ -16,6 +16,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@animate-ui/react": "2.4.2",
     "@base-ui/react": "1.9.0",
     "class-variance-authority": "0.7.1",
     "cn": "0.5.0",
