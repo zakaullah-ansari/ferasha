@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from apps.catalog.services import release_stock
 
+from .emails import send_status_email
 from .models import Order, OrderEvent, OrderStatus
 
 S = OrderStatus
@@ -140,6 +141,10 @@ def transition_order(
         reason=reason[:300],
         metadata=metadata or {},
     )
+
+    # After commit: a move that rolls back must not have emailed anyone.
+    order_id = locked.pk
+    transaction.on_commit(lambda: send_status_email(order_id, current, target))
 
     order.status = target
     order.placed_at = locked.placed_at
