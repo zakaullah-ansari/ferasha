@@ -25,13 +25,26 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             which are always shot on light. */}
         <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted">
           {product.primary_image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.primary_image}
-              alt=""
-              loading="lazy"
-              className="size-full object-cover transition-transform duration-500 ease-luxury group-hover:scale-[1.03]"
-            />
+            <>
+              {/* The link's text names the piece, so the photos are decorative here. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={product.primary_image.url}
+                alt=""
+                loading="lazy"
+                className="size-full object-cover transition-transform duration-500 ease-luxury group-hover:scale-[1.03]"
+              />
+              {product.secondary_image && (
+                // A second angle on hover or keyboard focus; no fade under reduced motion.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={product.secondary_image.url}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-300 ease-luxury group-focus-within:opacity-100 group-hover:opacity-100 motion-reduce:transition-none"
+                />
+              )}
+            </>
           ) : (
             <div className="flex size-full items-center justify-center">
               <span className="font-display text-sm text-muted-foreground">

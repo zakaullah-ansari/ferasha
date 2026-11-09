@@ -117,7 +117,7 @@ export function SearchDialog() {
                         <span className="size-12 shrink-0 overflow-hidden rounded-md bg-muted">
                           {product.primary_image && (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={product.primary_image} alt="" className="size-full object-cover" />
+                            <img src={product.primary_image.url} alt="" className="size-full object-cover" />
                           )}
                         </span>
                         <span className="min-w-0 flex-1 truncate">{product.name}</span>

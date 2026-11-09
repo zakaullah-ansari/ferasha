@@ -43,6 +43,7 @@ export const PRODUCT: ProductDetail = {
   stitching_days: 10,
   modesty: MODESTY_FULL,
   primary_image: null,
+  secondary_image: null,
   status: "active",
   description: "Hand-worked chikankari on fine Karachi lawn. Three-piece set.",
   care_instructions: "Dry clean only.",

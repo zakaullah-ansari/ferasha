@@ -107,6 +107,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     modesty = serializers.SerializerMethodField()
     primary_image = serializers.SerializerMethodField()
+    secondary_image = serializers.SerializerMethodField()
     category_slug = serializers.CharField(source="category.slug", read_only=True)
     from_price = serializers.SerializerMethodField()
 
@@ -115,21 +116,35 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = (
             "id", "slug", "name", "category_slug", "garment_type", "fabric",
             "work_type", "occasion", "base_price", "from_price", "compare_at_price",
-            "supports_bespoke", "stitching_days", "modesty", "primary_image", "status",
+            "supports_bespoke", "stitching_days", "modesty", "primary_image", "secondary_image",
+            "status",
         )
 
     @extend_schema_field(ModestySerializer)
     def get_modesty(self, obj) -> dict[str, Any]:
         return obj.modesty.as_dict()
 
+    @staticmethod
+    def _publishable(obj) -> list:
+        """Approved photos, primary first. The view prefetches approved ones only;
+        public_url is checked again so nothing unblurred can slip through."""
+        images = [image for image in obj.images.all() if image.asset.public_url]
+        return sorted(images, key=lambda image: (not image.is_primary, image.display_order))
+
+    @staticmethod
+    def _image(image) -> dict | None:
+        return {"url": image.asset.public_url, "alt_text": image.alt_text} if image else None
+
     @extend_schema_field(serializers.DictField(allow_null=True))
     def get_primary_image(self, obj) -> dict | None:
-        images = list(obj.images.all())
-        if not images:
-            return None
-        primary = next((i for i in images if i.is_primary), images[0])
-        url = primary.asset.public_url
-        return {"url": url, "alt_text": primary.alt_text} if url else None
+        images = self._publishable(obj)
+        return self._image(images[0] if images else None)
+
+    @extend_schema_field(serializers.DictField(allow_null=True))
+    def get_secondary_image(self, obj) -> dict | None:
+        """A second angle for the card's hover: the next approved photo, if any."""
+        images = self._publishable(obj)
+        return self._image(images[1] if len(images) > 1 else None)
 
     @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
     def get_from_price(self, obj) -> Decimal:

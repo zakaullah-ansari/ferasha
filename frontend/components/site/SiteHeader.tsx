@@ -5,10 +5,12 @@ import { Marquee } from "@/components/ui/marquee";
 import { ANNOUNCEMENTS, PRIMARY_NAV } from "@/lib/navigation";
 
 import { MobileNav } from "./MobileNav";
+import { ScrollAwareHeader } from "./ScrollAwareHeader";
 import { SearchDialog } from "./SearchDialog";
 
 /**
- * Announcement strip + sticky header: categories left, wordmark centred,
+ * Announcement strip + sticky header (it steps aside while reading down a
+ * page, see ScrollAwareHeader): categories left, wordmark centred,
  * account and bag right. The strip scrolls slowly, pauses on hover (moving
  * text must be pausable) and stops under reduce-motion via the global rule.
  */
@@ -24,7 +26,7 @@ export function SiteHeader() {
           ))}
         </Marquee>
       </div>
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
+      <ScrollAwareHeader className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <nav
           aria-label="Primary"
           className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-5 py-3"
@@ -49,7 +51,7 @@ export function SiteHeader() {
             <HeaderActions />
           </div>
         </nav>
-      </header>
+      </ScrollAwareHeader>
     </>
   );
 }

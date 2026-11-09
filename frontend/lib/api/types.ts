@@ -46,6 +46,12 @@ export interface ProductVariant {
   readonly is_active: boolean;
 }
 
+/** A publishable photo as list endpoints send it. */
+export interface ImageRef {
+  readonly url: string;
+  readonly alt_text: string;
+}
+
 export interface ProductSummary {
   readonly id: string;
   readonly slug: string;
@@ -61,7 +67,10 @@ export interface ProductSummary {
   readonly supports_bespoke: boolean;
   readonly stitching_days: number;
   readonly modesty: Modesty;
-  readonly primary_image: string | null;
+  /** Approved photos only (faces blurred); null until one exists. */
+  readonly primary_image: ImageRef | null;
+  /** A second angle, shown when the card is hovered or focused. */
+  readonly secondary_image: ImageRef | null;
   readonly status: string;
 }
 

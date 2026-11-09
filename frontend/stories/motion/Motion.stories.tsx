@@ -47,7 +47,8 @@ const PRODUCTS: ProductSummary[] = NAMES.map((name, index) => ({
   id: `motion-${index}`,
   slug: `motion-${index}`,
   name,
-  primary_image: suit.src,
+  primary_image: { url: suit.src, alt_text: "Mint lawn suit" },
+  secondary_image: index % 2 === 0 ? { url: suit.src, alt_text: "Mint lawn suit, detail" } : null,
 }));
 
 function Grid({ children }: { children: React.ReactNode }) {

@@ -13,7 +13,8 @@ run before it is committed. If a story could not be run, the entry says so.
 
 | Enhancement | What it does, and why | Commit |
 |---|---|---|
-| Measurements forgotten at sign-out | Signing out (header, dashboard, password change) now also removes made-to-measure pieces from the bag, since each carries its owner's measurements; ready-made pieces stay. Found by an automated security review of the bespoke change. | this commit |
+| Motion, round one | The header steps aside while reading down a page and returns on scroll up (never while you are using it by keyboard). Product cards show a second photo on hover, ready for when photography arrives. Shop pages fade softly into each other, but never on the first load, so pages do not look slower. Fixed on the way: product photos would have shown as broken images the moment the first photo was approved (the site expected a plain link, the API sends a link and its description). Skipped: "Added ✓" (the bag already opens to confirm) and the photo-morph into the product page (needs React features that are not stable yet). | this commit |
+| Measurements forgotten at sign-out | Signing out (header, dashboard, password change) now also removes made-to-measure pieces from the bag, since each carries its owner's measurements; ready-made pieces stay. Found by an automated security review of the bespoke change. | `2c3ec30` |
 | Bespoke orders | A customer chooses "made to measure" on the product page, enters measurements and adds the piece to the bag at the full price (garment + stitching). The server checks the measurements when the piece is added and again at checkout, then freezes them onto the order for the tailor. Each bespoke piece is its own line; made-to-measure never touches stock (not even on cancel). "Add full lining" now reaches the tailor. Browser measurement checks now match the server's exactly (one was stricter, four were missing). Unsent measurements are cleared on sign-out. Verified end to end with a real order. | `983726e` |
 | This log, and reliable story runs | `Enhancement.md` is kept with every change. Storybook's test runner gets three minutes to start its browser (30 s was too short on a busy machine); the review and glass stories, which had not run, now pass, and a review-story bug (two "4 stars" on the page) is fixed. | `03ad2b3` |
 | Phone drawers | Bag and filters rise from the bottom on phones and swipe away; side panels stay on desktop. No half-height stop: it hid the "Show garments" button. | `b995630` |
@@ -46,7 +47,7 @@ run before it is committed. If a story could not be run, the entry says so.
 
 Agreed or proposed, roughly in order:
 
-1. **Motion from movin.design** (proposed): product photo flowing into the product page; second photo on card hover; a calm "Added ✓" on Add to bag; header that hides on scroll down; soft page fades; an order-placed moment.
+1. **Motion, round two**: an order-placed moment; calm reveals for headings and sections. Also measure the homepage hero's fade-in text against load speed before launch.
 2. **Trust strip** with real facts (coverage stated, fully lined, free Maharashtra delivery, tailored in Kurla). Proposed.
 3. **Frosted-glass icons** - waiting for the subject (categories? trust points?) and approval of CSS animation inside the SVG files.
 4. **Review photos** through the face-blur pipeline.
