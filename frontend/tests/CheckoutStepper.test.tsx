@@ -11,7 +11,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CheckoutStepper } from "@/components/CheckoutStepper";
-import type { CheckoutQuote } from "@/lib/api/types";
 
 import { ORDER, QUOTE } from "./fixtures/commerce";
 

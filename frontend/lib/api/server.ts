@@ -65,7 +65,6 @@ export async function getSignedIn<T>(path: string, next: string): Promise<T> {
  */
 export function safeNextPath(next: string | string[] | undefined): string {
   const value = Array.isArray(next) ? next[0] : next;
-  // eslint-disable-next-line no-control-regex
   if (!value || !value.startsWith("/") || /[\u0000-\u001f\u007f\\]/.test(value)) return "/";
   const base = "http://same-origin.invalid";
   let url: URL;

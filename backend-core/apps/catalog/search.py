@@ -10,7 +10,12 @@ from __future__ import annotations
 
 import re
 
-from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector, TrigramWordSimilarity
+from django.contrib.postgres.search import (
+    SearchQuery,
+    SearchRank,
+    SearchVector,
+    TrigramWordSimilarity,
+)
 from django.db.models import F, Q, Value
 from django.db.models.functions import Concat, Lower, Replace
 

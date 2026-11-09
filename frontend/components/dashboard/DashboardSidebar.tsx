@@ -30,7 +30,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { ADMIN_LINKS } from "@/lib/admin-links";
-import { api } from "@/lib/api/client";
 import type { SessionUser } from "@/lib/api/types";
 import { signOut as endSession } from "@/lib/sign-out";
 

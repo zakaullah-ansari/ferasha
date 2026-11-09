@@ -13,7 +13,8 @@ run before it is committed. If a story could not be run, the entry says so.
 
 | Enhancement | What it does, and why | Commit |
 |---|---|---|
-| Fonts shipped with the site | Cormorant Garamond and Inter now come from the site's own files (open licence, licences included) instead of being fetched from Google while building. The dev server had twice failed to fetch them and shown errors instead of pages. Same look; still preloaded with no layout shift; no requests to Google. | this commit |
+| Automatic quality checks | The frontend is now linted (Next.js's recommended rules), with zero warnings allowed, and CI runs it on every pull request alongside the typecheck, unit tests and stories. The backend's own lint (ruff) and migration check were run against this session's work: one import-order fix. | this commit |
+| Fonts shipped with the site | Cormorant Garamond and Inter now come from the site's own files (open licence, licences included) instead of being fetched from Google while building. The dev server had twice failed to fetch them and shown errors instead of pages. Same look; still preloaded with no layout shift; no requests to Google. | `6a56264` |
 | Trust strip and order-placed moment | Four promises the shop already keeps (coverage stated, tailored in Kurla, made to measure, delivery terms) below the homepage hero and beside the buy button, from one source, so delivery wording always matches what checkout charges. Nothing about returns or payment security until those exist. After placing an order: a calm tick and "what happens next" (payment, the atelier - measurements checked first for bespoke - and delivery), shown only while the order is in progress. | `58ae924` |
 | Motion, round one | The header steps aside while reading down a page and returns on scroll up (never while you are using it by keyboard). Product cards show a second photo on hover, ready for when photography arrives. Shop pages fade softly into each other, but never on the first load, so pages do not look slower. Fixed on the way: product photos would have shown as broken images the moment the first photo was approved (the site expected a plain link, the API sends a link and its description). Skipped: "Added ✓" (the bag already opens to confirm) and the photo-morph into the product page (needs React features that are not stable yet). | `ea02357` |
 | Measurements forgotten at sign-out | Signing out (header, dashboard, password change) now also removes made-to-measure pieces from the bag, since each carries its owner's measurements; ready-made pieces stay. Found by an automated security review of the bespoke change. | `2c3ec30` |
@@ -53,6 +54,11 @@ Agreed or proposed, roughly in order:
 2. **Frosted-glass icons** - waiting for the subject (categories? trust points?) and approval of CSS animation inside the SVG files.
 3. **Review photos** through the face-blur pipeline.
 4. **Payment gateway** (Razorpay) - deliberately last; the backend is largely ready.
+
+## Later, when upgrading
+
+- Next.js 16 with ESLint 10: ESLint 9 is marked deprecated, but Next 15's lint rules support only up to 9, so both move together.
+- React's View Transitions, once stable: the photo flowing from a product card into its page.
 
 ## Waiting on the owner
 

@@ -64,7 +64,7 @@ jobs:
       - run: docker compose --profile test run --rm ai-tests
 
   frontend:
-    name: frontend (typecheck, unit tests)
+    name: frontend (lint, typecheck, unit tests, stories)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -77,6 +77,8 @@ jobs:
       # pnpm version comes from package.json "packageManager".
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      # Zero warnings allowed (--max-warnings=0 in package.json), so they cannot pile up.
+      - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
       # Every story renders (and its play steps pass) in real Chromium, so a
