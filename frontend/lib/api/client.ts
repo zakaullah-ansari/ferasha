@@ -145,8 +145,8 @@ async function send<T>(path: string, options: SendOptions = {}, retried = false)
 }
 
 export const api = {
-  listProducts(params: QueryParams = {}): Promise<Paginated<ProductSummary>> {
-    return get<Paginated<ProductSummary>>(`/api/v1/catalog/products/${toQuery(params)}`);
+  listProducts(params: QueryParams = {}, options?: RequestOptions): Promise<Paginated<ProductSummary>> {
+    return get<Paginated<ProductSummary>>(`/api/v1/catalog/products/${toQuery(params)}`, options);
   },
 
   getFacets(params: QueryParams = {}): Promise<Facets> {

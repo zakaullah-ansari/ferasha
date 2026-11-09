@@ -5,6 +5,7 @@ import { Marquee } from "@/components/ui/marquee";
 import { ANNOUNCEMENTS, PRIMARY_NAV } from "@/lib/navigation";
 
 import { MobileNav } from "./MobileNav";
+import { SearchDialog } from "./SearchDialog";
 
 /**
  * Announcement strip + sticky header: categories left, wordmark centred,
@@ -43,7 +44,8 @@ export function SiteHeader() {
           <Link href="/" className="font-display text-3xl tracking-tight text-foreground">
             Ferasha
           </Link>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-1">
+            <SearchDialog />
             <HeaderActions />
           </div>
         </nav>
