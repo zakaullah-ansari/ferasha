@@ -5,6 +5,8 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import { buttonVariants } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { ATELIER } from "@/lib/brand";
+import { cn } from "@/lib/cn";
+import { GLASS } from "@/lib/glass";
 import heroImage from "@/public/images/hero-interim.jpg";
 
 /**
@@ -45,7 +47,7 @@ export function Hero() {
             <Link href="/products" className={buttonVariants({ size: "lg" })}>
               Shop the collection
             </Link>
-            <a href={ATELIER.phoneHref} className={buttonVariants({ size: "lg", variant: "outline" })}>
+            <a href={ATELIER.phoneHref} className={buttonVariants({ size: "lg", variant: "sweep" })}>
               Book a bespoke fitting
             </a>
           </div>
@@ -72,7 +74,7 @@ export function Hero() {
           />
         </div>
         <BlurFade delay={1} className="absolute -bottom-6 left-6 right-6 md:-left-10 md:right-auto">
-          <div className="rounded-2xl border bg-background/90 px-5 py-4 shadow-sm backdrop-blur-md">
+          <div className={cn("rounded-2xl px-5 py-4", GLASS.float)}>
             <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Tailored by</p>
             <p className="mt-1 font-display text-lg">{ATELIER.name}</p>
           </div>

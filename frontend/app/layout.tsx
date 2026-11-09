@@ -27,7 +27,8 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en-IN" className={fontVariables}>
-      <body className="min-h-dvh bg-background text-foreground antialiased">
+      {/* relative: the drawer positions correctly on iOS Safari (shadcn drawer docs). */}
+      <body className="relative min-h-dvh bg-background text-foreground antialiased">
         {/* Skip link: the first tab stop on every page. */}
         <a
           href="#main"

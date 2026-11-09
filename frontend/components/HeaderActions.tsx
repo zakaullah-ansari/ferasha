@@ -70,7 +70,7 @@ export function HeaderActions() {
       {user && (
         <div className="flex items-center gap-3 text-sm">
           {user.is_back_office && (
-            <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-primary hover:underline">
+            <Link href="/dashboard" className="hidden items-center gap-1.5 text-primary hover:underline sm:inline-flex">
               <LayoutDashboard className="size-4" aria-hidden="true" />
               Dashboard
             </Link>

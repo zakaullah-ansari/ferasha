@@ -8,7 +8,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { GarmentType } from "@/lib/api/fit-schema";
 import type { ProductDetail, ProductVariant } from "@/lib/api/types";
 import { ATELIER } from "@/lib/brand";
+import { cn } from "@/lib/cn";
 import { formatINR } from "@/lib/format";
+import { GLASS } from "@/lib/glass";
 import { useCartStore } from "@/store/useCartStore";
 
 /**
@@ -106,7 +108,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
 
       {/* On phones the actions pin to the bottom of the screen, within thumb
           reach however far the shopper has scrolled; inline from md up. */}
-      <div className="flex gap-3 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:border-t max-md:bg-background/95 max-md:p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:backdrop-blur-md">
+      <div className={cn("flex gap-3 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:border-t max-md:p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]", GLASS.phoneBar)}>
         <Button variant="outline" size="lg" className="flex-1" onClick={() => setOpen(true)}>
           {selection?.mode === "standard" ? `Size ${selection.size} · Change` : "Select your fit"}
         </Button>

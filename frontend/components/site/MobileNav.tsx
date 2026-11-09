@@ -50,6 +50,9 @@ export function MobileNav() {
               </li>
             </ul>
           </div>
+          <Link href="/account" onClick={close} className="text-sm">
+            Your account
+          </Link>
           <div className="mt-auto space-y-1 border-t pt-6 text-sm text-muted-foreground">
             <p>Tailored by {ATELIER.name}</p>
             <a href={ATELIER.phoneHref} className="text-foreground underline underline-offset-4">

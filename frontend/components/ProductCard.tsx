@@ -1,6 +1,8 @@
 import { CoverageScore, ModestyBadgeList } from "@/components/ModestyBadge";
 import type { ProductSummary } from "@/lib/api/types";
+import { cn } from "@/lib/cn";
 import { formatINR } from "@/lib/format";
+import { GLASS } from "@/lib/glass";
 
 /**
  * Listing card.
@@ -38,7 +40,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             </div>
           )}
           {product.supports_bespoke && (
-            <span className="absolute left-3 top-3 rounded-full bg-background/95 px-2.5 py-1 text-[0.65rem] font-medium tracking-wide text-foreground uppercase">
+            <span className={cn("absolute top-3 left-3 rounded-full px-2.5 py-1 text-[0.65rem] font-medium tracking-wide text-foreground uppercase", GLASS.float)}>
               Bespoke
             </span>
           )}

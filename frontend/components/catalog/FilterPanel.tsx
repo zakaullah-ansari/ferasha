@@ -1,23 +1,15 @@
 "use client";
 
 import { SlidersHorizontal } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
 
+import { ResponsivePanel } from "@/components/ResponsivePanel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import type { FacetOption, Facets } from "@/lib/api/types";
 import {
   activeFilters,
@@ -169,28 +161,28 @@ export function FilterPanel({ facets }: { facets: Facets }) {
 /** Phones and tablets: the same panel in a sheet, closed by a button that says what it will show. */
 export function MobileFilters({ facets }: { facets: Facets }) {
   const { query, isPending } = useCatalogNavigation();
+  const [open, setOpen] = useState(false);
   const active = activeFilters(query, facets).length;
 
   return (
-    <Sheet>
-      <SheetTrigger render={<Button variant="outline" className="lg:hidden" />}>
+    <>
+      <Button variant="outline" className="lg:hidden" onClick={() => setOpen(true)}>
         <SlidersHorizontal data-icon="inline-start" />
         Filters
         {active > 0 && <Badge aria-label={`${active} active`}>{active}</Badge>}
-      </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-sm">
-        <SheetHeader>
-          <SheetTitle className="font-display text-2xl">Filters</SheetTitle>
-        </SheetHeader>
-        <div className="flex-1 overflow-y-auto px-4">
-          <FilterPanel facets={facets} />
-        </div>
-        <SheetFooter>
-          <SheetClose render={<Button size="lg" className="w-full" />}>
+      </Button>
+      <ResponsivePanel
+        open={open}
+        onOpenChange={setOpen}
+        title="Filters"
+        footer={
+          <Button size="lg" className="w-full" onClick={() => setOpen(false)}>
             {isPending ? "Updating…" : `Show ${facets.total} ${facets.total === 1 ? "garment" : "garments"}`}
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+          </Button>
+        }
+      >
+        <FilterPanel facets={facets} />
+      </ResponsivePanel>
+    </>
   );
 }

@@ -4,6 +4,8 @@ import * as React from "react"
 import { Dialog as DialogPrimitive } from "@animate-ui/react/primitives/base-ui/dialog"
 import { cn } from "cn"
 
+import { GLASS } from "@/lib/glass"
+
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
@@ -54,6 +56,7 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/5 outline-none sm:max-w-md",
+          GLASS.panel,
           className
         )}
         {...props}

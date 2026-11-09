@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 
+import { ChaseLoader } from "@/components/ChaseLoader";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -136,7 +137,10 @@ export function SearchDialog() {
               </div>
             )
           ) : (
-            <p className="text-sm text-muted-foreground">Searching…</p>
+            <p className="flex items-center gap-3 text-sm text-muted-foreground">
+              <ChaseLoader decorative className="text-2xl text-primary" />
+              Searching…
+            </p>
           )}
         </div>
       </DialogContent>
