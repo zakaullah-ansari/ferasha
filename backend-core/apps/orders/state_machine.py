@@ -118,7 +118,9 @@ def transition_order(
     if target == S.CANCELLED and current in STOCK_COMMITTED_STATUSES:
         # Stock was reserved when the order was placed. Without this a
         # cancelled piece would show as sold out until someone noticed.
-        for line in locked.lines.filter(variant__isnull=False):
+        # Made-to-measure lines never reserved stock; releasing them would put
+        # the never-stocked CUSTOM variant on sale.
+        for line in locked.lines.filter(variant__isnull=False, is_bespoke=False):
             release_stock(line.variant_id, line.quantity)
 
     locked.status = target

@@ -11,6 +11,8 @@
  * because a relative path has no origin to resolve against there.
  */
 
+import { clearFitDraft } from "@/lib/fit-draft";
+
 import type {
   Category,
   CheckoutQuote,
@@ -209,7 +211,9 @@ export const api = {
     register(details: Registration): Promise<{ user: SessionUser }> {
       return send("/api/session/register", { method: "POST", body: details }, true);
     },
+    /** Also forgets any unsent measurements, before the request: a failed sign-out must not leave them. */
     signOut(): Promise<void> {
+      clearFitDraft();
       return send("/api/session/logout", { method: "POST" }, true);
     },
     updateProfile(details: { full_name: string; phone: string }): Promise<SessionUser> {
@@ -240,8 +244,17 @@ export const api = {
      * Make the server cart exactly the browser bag, in one transaction.
      * Returns the variant ids the server refused (sold out, unpublished).
      */
+    /**
+     * Make the server cart exactly the browser bag. A bespoke line carries its
+     * measurements; the server validates them again and answers 400 (never a
+     * silent skip) when the atelier cannot cut from them.
+     */
     replace(
-      items: ReadonlyArray<{ variant_id: string; quantity: number }>,
+      items: ReadonlyArray<{
+        variant_id: string;
+        quantity: number;
+        bespoke?: { measurements: Record<string, number>; preferences: Record<string, string> };
+      }>,
     ): Promise<{ skipped: string[] }> {
       return send("/api/v1/cart/merge/", { method: "POST", body: { items, replace: true } });
     },

@@ -80,7 +80,11 @@ class CartViewSet(viewsets.ViewSet):
         payload = MergeSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         cart = services.get_active_cart(request.user)
-        skipped = services.merge_items(
-            cart, payload.validated_data["items"], replace=payload.validated_data["replace"]
-        )
+        try:
+            skipped = services.merge_items(
+                cart, payload.validated_data["items"], replace=payload.validated_data["replace"]
+            )
+        except services.BespokeLineError as exc:
+            # Measurements are never dropped silently: the customer corrects them.
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return self._render(cart, skipped=skipped)

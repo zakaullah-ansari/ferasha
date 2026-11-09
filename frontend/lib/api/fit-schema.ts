@@ -70,30 +70,48 @@ export function measurementSchema(name: MeasurementName) {
 }
 
 /**
- * Cross-field rules, mirrored from `apps/tailoring/serializers.py`.
+ * Cross-field rules: an exact mirror of `_validate_coherence` in
+ * backend-core apps/tailoring/validators.py - same conditions, same
+ * messages. Stricter here would refuse measurements the atelier accepts;
+ * looser would let through a set the server refuses at checkout.
  *
- * These catch transposed or mismatched entries that are individually
- * plausible — the error mode a per-field range check cannot see.
+ * Each catches entries that are individually plausible but impossible
+ * together - transposed digits, a mis-keyed field.
  */
-export const CROSS_FIELD_RULES = [
-  {
-    id: "underbust_not_above_bust",
-    message: "Underbust cannot exceed bust.",
-    applies: (v: Partial<Measurements>) =>
-      v.underbust !== undefined && v.bust !== undefined,
-    valid: (v: Partial<Measurements>) => v.underbust! <= v.bust!,
-    fields: ["underbust", "bust"] as const,
-  },
-  {
-    id: "waist_near_bust_and_hip",
-    message: "Waist must be within 24 inches of bust and hip.",
-    applies: (v: Partial<Measurements>) =>
-      v.waist !== undefined && v.bust !== undefined && v.hip !== undefined,
-    valid: (v: Partial<Measurements>) =>
-      Math.abs(v.waist! - v.bust!) <= 24 && Math.abs(v.waist! - v.hip!) <= 24,
-    fields: ["waist", "bust", "hip"] as const,
-  },
-] as const;
+type Rule = {
+  readonly id: string;
+  readonly message: string;
+  readonly fields: readonly [MeasurementName, MeasurementName];
+  readonly applies: (v: Partial<Measurements>) => boolean;
+  readonly valid: (v: Partial<Measurements>) => boolean;
+};
+
+/** A rule between two measurements, skipped unless both are given. */
+function pair(
+  id: string,
+  a: MeasurementName,
+  b: MeasurementName,
+  valid: (a: number, b: number) => boolean,
+  message: string,
+): Rule {
+  return {
+    id,
+    message,
+    fields: [a, b],
+    applies: (v) => v[a] !== undefined && v[b] !== undefined,
+    valid: (v) => valid(v[a]!, v[b]!),
+  };
+}
+
+export const CROSS_FIELD_RULES: readonly Rule[] = [
+  pair("underbust_not_above_bust", "underbust", "bust", (u, b) => u <= b, "Underbust cannot exceed bust. Please re-check both values."),
+  pair("waist_not_far_above_bust", "waist", "bust", (w, b) => w <= b + 24, "Waist is implausibly large relative to bust. Please re-check both values."),
+  pair("waist_not_far_above_hip", "waist", "hip", (w, h) => w <= h + 24, "Waist is implausibly large relative to hip. Please re-check both values."),
+  pair("wrist_not_above_bicep", "wrist", "bicep", (w, b) => w <= b, "Wrist cannot exceed bicep. Please re-check both values."),
+  pair("knee_not_above_thigh", "knee", "thigh", (k, t) => k <= t, "Knee cannot exceed thigh. Please re-check both values."),
+  pair("kameez_not_far_beyond_trouser", "kameez_length", "trouser_length", (k, t) => k <= t + 18, "Kameez length is implausibly long relative to trouser length."),
+  pair("ghera_not_narrower_than_flare", "ghera", "farshi_flare", (g, f) => g >= f, "Ghera (hem sweep) cannot be narrower than the farshi flare."),
+];
 
 export type Measurements = Partial<Record<MeasurementName, number>>;
 

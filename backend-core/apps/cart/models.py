@@ -44,6 +44,11 @@ class CartItem(models.Model):
         ProductVariant, on_delete=models.PROTECT, related_name="cart_items"
     )
     quantity = models.PositiveIntegerField(default=1)
+    #: Made to measure: one piece per line, cut to these measurements (inches)
+    #: and preferences, which checkout freezes onto the order.
+    is_bespoke = models.BooleanField(default=False)
+    measurements = models.JSONField(default=dict, blank=True)
+    preferences = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -51,7 +56,16 @@ class CartItem(models.Model):
         verbose_name = "Cart Item"
         verbose_name_plural = "Cart Items"
         constraints = [
-            models.UniqueConstraint(fields=["cart", "variant"], name="unique_variant_per_cart"),
+            # Ready-made lines merge by variant; every bespoke piece is its own line.
+            models.UniqueConstraint(
+                fields=["cart", "variant"],
+                condition=models.Q(is_bespoke=False),
+                name="unique_variant_per_cart",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(is_bespoke=False) | models.Q(quantity=1),
+                name="cartitem_bespoke_is_one_piece",
+            ),
             models.CheckConstraint(
                 condition=models.Q(quantity__gte=1), name="cartitem_quantity_positive"
             ),
@@ -59,3 +73,9 @@ class CartItem(models.Model):
 
     def __str__(self) -> str:
         return f"{self.variant.sku} x {self.quantity} (Cart {self.cart_id})"
+
+    @property
+    def unit_price(self):
+        """What one piece costs: the variant's price, plus stitching when made to measure."""
+        surcharge = self.variant.product.bespoke_surcharge if self.is_bespoke else 0
+        return self.variant.price + surcharge

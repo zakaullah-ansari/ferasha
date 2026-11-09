@@ -225,6 +225,8 @@ export interface CheckoutQuoteLine {
   readonly product_name: string;
   readonly variant_label: string;
   readonly quantity: number;
+  /** Made to measure: one piece, stitching surcharge included in unit_price. */
+  readonly is_bespoke: boolean;
   readonly unit_price: string;
   readonly line_total: string;
 }

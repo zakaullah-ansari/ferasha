@@ -18,6 +18,7 @@ from django.db import IntegrityError, transaction
 
 from apps.catalog.enums import ProductStatus
 from apps.catalog.models import ProductVariant
+from apps.tailoring.services import BespokeError, validate_bespoke_line
 
 from .models import Cart, CartItem
 
@@ -28,6 +29,10 @@ MAX_QUANTITY_PER_LINE = 10
 
 class CartError(ValueError):
     """A cart mutation the customer can correct (bad variant, no stock)."""
+
+
+class BespokeLineError(CartError):
+    """Measurements the atelier cannot cut from. Never skipped silently."""
 
 
 def _purchasable_variant(variant_id: Any) -> ProductVariant:
@@ -80,7 +85,7 @@ def add_item(cart: Cart, variant_id: Any, quantity: Any = 1) -> CartItem:
     quantity = _validated_quantity(quantity)
     variant = _purchasable_variant(variant_id)
     # Lock the line so two concurrent adds sum rather than overwrite.
-    item = CartItem.objects.select_for_update().filter(cart=cart, variant=variant).first()
+    item = CartItem.objects.select_for_update().filter(cart=cart, variant=variant, is_bespoke=False).first()
     current = item.quantity if item else 0
     target = _clamp_to_stock(variant, current + quantity)
     if item is None:
@@ -103,7 +108,7 @@ def set_quantity(cart: Cart, variant_id: Any, quantity: Any) -> CartItem | None:
     item = (
         CartItem.objects.select_for_update()
         .select_related("variant__product")
-        .filter(cart=cart, variant_id=variant_id)
+        .filter(cart=cart, variant_id=variant_id, is_bespoke=False)
         .first()
     )
     if item is None:
@@ -113,9 +118,25 @@ def set_quantity(cart: Cart, variant_id: Any, quantity: Any) -> CartItem | None:
     return item
 
 
+def add_bespoke_item(cart: Cart, variant_id: Any, measurements: Any, preferences: Any = None) -> CartItem:
+    """A made-to-measure piece: its own line, one piece, never limited by stock.
+
+    Raises BespokeError (a CartError) when the measurements will not do: unlike
+    a sold-out piece, they must not be dropped silently - the customer fixes them.
+    """
+    variant = _purchasable_variant(variant_id)
+    try:
+        cleaned, chosen = validate_bespoke_line(variant, measurements, preferences)
+    except BespokeError as exc:
+        raise BespokeLineError(str(exc)) from exc
+    return CartItem.objects.create(
+        cart=cart, variant=variant, quantity=1, is_bespoke=True, measurements=cleaned, preferences=chosen
+    )
+
+
 def remove_item(cart: Cart, variant_id: Any) -> bool:
     try:
-        deleted, _ = CartItem.objects.filter(cart=cart, variant_id=variant_id).delete()
+        deleted, _ = CartItem.objects.filter(cart=cart, variant_id=variant_id, is_bespoke=False).delete()
     except (ValueError, TypeError):
         return False
     return deleted > 0
@@ -144,6 +165,11 @@ def merge_items(
     skipped: list[str] = []
     for entry in items:
         variant_id = entry.get("variant_id")
+        bespoke = entry.get("bespoke")
+        if bespoke:
+            # Raises BespokeLineError, rolling the whole merge back.
+            add_bespoke_item(cart, variant_id, bespoke.get("measurements"), bespoke.get("preferences"))
+            continue
         try:
             add_item(cart, variant_id, entry.get("quantity", 1))
         except CartError:

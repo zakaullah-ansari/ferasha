@@ -24,11 +24,13 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.cart.models import Cart, CartItem
-from apps.catalog.enums import ProductStatus
+from apps.catalog.enums import ProductStatus, UnitSystem
 from apps.catalog.models import ProductVariant
 from apps.catalog.services import InsufficientStock, reserve_stock
 from apps.orders.models import Order, OrderLine, OrderStatus, OrderTaxSnapshot
 from apps.orders.state_machine import transition_order
+from apps.tailoring.models import TailoringOrderSpec
+from apps.tailoring.services import BespokeError, validate_bespoke_line
 from apps.taxes.services import (
     PlaceOfSupply,
     TaxableLine,
@@ -76,8 +78,9 @@ class Quote:
                     "product_name": item.variant.product.name,
                     "variant_label": _variant_label(item.variant),
                     "quantity": item.quantity,
-                    "unit_price": str(item.variant.price),
-                    "line_total": str(item.variant.price * item.quantity),
+                    "is_bespoke": item.is_bespoke,
+                    "unit_price": str(item.unit_price),
+                    "line_total": str(item.unit_price * item.quantity),
                 }
                 for item in self.lines
             ],
@@ -90,7 +93,8 @@ class Quote:
 
 
 def _variant_label(variant: ProductVariant) -> str:
-    return f"{variant.size} / {variant.colour}"
+    """The size's label, never its code: 'M / Ivory', 'Made to measure / Ivory'."""
+    return f"{variant.get_size_display()} / {variant.colour}"
 
 
 def shipping_charge_for(place: PlaceOfSupply) -> Decimal:
@@ -119,6 +123,13 @@ def _assert_purchasable(lines: tuple[CartItem, ...]) -> None:
         variant = item.variant
         if not variant.is_active or variant.product.status != ProductStatus.ACTIVE:
             raise CheckoutError(f"{variant.product.name} is no longer available.")
+        if item.is_bespoke:
+            # Made to order, so no stock - but the measurements are checked again.
+            try:
+                validate_bespoke_line(variant, item.measurements, item.preferences)
+            except BespokeError as exc:
+                raise CheckoutError(str(exc)) from exc
+            continue
         if variant.stock_quantity < item.quantity:
             raise CheckoutError(
                 f"Only {max(variant.stock_quantity, 0)} of {variant.product.name} "
@@ -139,7 +150,9 @@ def _price(lines: tuple[CartItem, ...], address: dict[str, Any]) -> Quote:
         TaxableLine(
             sku=item.variant.sku,
             hsn_code=item.variant.product.hsn_code,
-            unit_price=item.variant.price,
+            # Stitching sold with the garment is one composite supply, taxed at
+            # the garment's rate: the surcharge is inside the taxable value.
+            unit_price=item.unit_price,
             quantity=item.quantity,
             description=item.variant.product.name,
             rate_override=item.variant.product.gst_rate_override,
@@ -153,7 +166,7 @@ def _price(lines: tuple[CartItem, ...], address: dict[str, Any]) -> Quote:
     except TaxError as exc:
         raise CheckoutError(str(exc)) from exc
 
-    subtotal = money(sum((item.variant.price * item.quantity for item in lines), Decimal("0")))
+    subtotal = money(sum((item.unit_price * item.quantity for item in lines), Decimal("0")))
     return Quote(
         lines=lines, place=place, subtotal=subtotal, shipping_charge=shipping, breakdown=breakdown
     )
@@ -220,6 +233,8 @@ def place_order(
         raise PriceChanged(priced)
 
     for item in lines:
+        if item.is_bespoke:
+            continue  # made to order: the CUSTOM variant holds no stock
         try:
             reserve_stock(item.variant_id, item.quantity)
         except InsufficientStock as exc:
@@ -244,7 +259,7 @@ def place_order(
         customer_notes=customer_notes,
     )
 
-    OrderLine.objects.bulk_create(
+    order_lines = OrderLine.objects.bulk_create(
         [
             OrderLine(
                 order=order,
@@ -254,10 +269,27 @@ def place_order(
                 variant_label=_variant_label(item.variant),
                 hsn_code=item.variant.product.hsn_code,
                 quantity=item.quantity,
-                unit_price=item.variant.price,
+                unit_price=item.unit_price,
+                is_bespoke=item.is_bespoke,
                 modesty_snapshot=item.variant.product.modesty.as_dict(),
             )
             for item in lines
+        ]
+    )
+    # The measurements are frozen onto the order: a later edit to anything
+    # else can never change what the atelier cuts.
+    TailoringOrderSpec.objects.bulk_create(
+        [
+            TailoringOrderSpec(
+                order_line=line,
+                measurements=item.measurements,
+                preferences=item.preferences,
+                unit_system=UnitSystem.INCH,
+                garment_type=item.variant.product.garment_type,
+                surcharge=item.variant.product.bespoke_surcharge,
+            )
+            for line, item in zip(order_lines, lines, strict=True)
+            if item.is_bespoke
         ]
     )
 

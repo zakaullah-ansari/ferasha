@@ -59,7 +59,7 @@ export function CartDrawer() {
       ) : (
         <ul className="divide-y">
           {items.map((item) => (
-            <li key={item.variantId} className="flex gap-4 py-4">
+            <li key={item.lineId} className="flex gap-4 py-4">
               <div className="size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {item.image && (
                   // Media is served by the API's own image pipeline.
@@ -78,33 +78,38 @@ export function CartDrawer() {
                   <p className="tabular-nums">{formatINR(item.price * item.quantity)}</p>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center rounded-full border">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={`Decrease quantity of ${item.name}`}
-                      disabled={item.quantity <= 1}
-                      onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                    >
-                      <Minus />
-                    </Button>
-                    <span className="w-8 text-center text-xs tabular-nums" aria-live="polite">
-                      {item.quantity}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={`Increase quantity of ${item.name}`}
-                      onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                    >
-                      <Plus />
-                    </Button>
-                  </div>
+                  {item.bespoke ? (
+                    // Each bespoke piece is cut to its own measurements: one per line.
+                    <p className="text-xs text-primary">Made to measure · stitched for you</p>
+                  ) : (
+                    <div className="flex items-center rounded-full border">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Decrease quantity of ${item.name}`}
+                        disabled={item.quantity <= 1}
+                        onClick={() => updateQuantity(item.lineId, item.quantity - 1)}
+                      >
+                        <Minus />
+                      </Button>
+                      <span className="w-8 text-center text-xs tabular-nums" aria-live="polite">
+                        {item.quantity}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Increase quantity of ${item.name}`}
+                        onClick={() => updateQuantity(item.lineId, item.quantity + 1)}
+                      >
+                        <Plus />
+                      </Button>
+                    </div>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     aria-label={`Remove ${item.name} from bag`}
-                    onClick={() => removeItem(item.variantId)}
+                    onClick={() => removeItem(item.lineId)}
                   >
                     <Trash2 />
                   </Button>

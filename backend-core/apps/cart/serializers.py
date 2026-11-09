@@ -14,21 +14,19 @@ class CartItemSerializer(serializers.ModelSerializer):
     product_slug = serializers.CharField(source="variant.product.slug", read_only=True)
     size = serializers.CharField(source="variant.size", read_only=True)
     colour = serializers.CharField(source="variant.colour", read_only=True)
-    unit_price = serializers.DecimalField(
-        source="variant.price", max_digits=12, decimal_places=2, read_only=True
-    )
+    unit_price = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     line_total = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
         fields = (
             "variant_id", "sku", "product_name", "product_slug",
-            "size", "colour", "quantity", "unit_price", "line_total",
+            "size", "colour", "quantity", "unit_price", "line_total", "is_bespoke",
         )
         read_only_fields = fields
 
     def get_line_total(self, obj: CartItem) -> str:
-        return str(obj.variant.price * obj.quantity)
+        return str(obj.unit_price * obj.quantity)
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -45,9 +43,7 @@ class CartSerializer(serializers.ModelSerializer):
         return sum(item.quantity for item in obj.items.all())
 
     def get_subtotal(self, obj: Cart) -> str:
-        total = sum(
-            (item.variant.price * item.quantity for item in obj.items.all()), Decimal("0.00")
-        )
+        total = sum((item.unit_price * item.quantity for item in obj.items.all()), Decimal("0.00"))
         return str(total)
 
 
@@ -61,6 +57,17 @@ class SetQuantitySerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=0)
 
 
+class BespokeSerializer(serializers.Serializer):
+    """Shape only: the atelier's validators judge the values (tailoring/services.py)."""
+
+    measurements = serializers.DictField(child=serializers.JSONField())
+    preferences = serializers.DictField(child=serializers.CharField(), required=False, default=dict)
+
+
+class MergeItemSerializer(AddItemSerializer):
+    bespoke = BespokeSerializer(required=False)
+
+
 class MergeSerializer(serializers.Serializer):
-    items = AddItemSerializer(many=True, allow_empty=True)
+    items = MergeItemSerializer(many=True, allow_empty=True)
     replace = serializers.BooleanField(default=False)

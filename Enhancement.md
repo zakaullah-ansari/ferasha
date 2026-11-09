@@ -13,6 +13,7 @@ run before it is committed. If a story could not be run, the entry says so.
 
 | Enhancement | What it does, and why | Commit |
 |---|---|---|
+| Bespoke orders | A customer chooses "made to measure" on the product page, enters measurements and adds the piece to the bag at the full price (garment + stitching). The server checks the measurements when the piece is added and again at checkout, then freezes them onto the order for the tailor. Each bespoke piece is its own line; made-to-measure never touches stock (not even on cancel). "Add full lining" now reaches the tailor. Browser measurement checks now match the server's exactly (one was stricter, four were missing). Unsent measurements are cleared on sign-out. Verified end to end with a real order. | this commit |
 | This log, and reliable story runs | `Enhancement.md` is kept with every change. Storybook's test runner gets three minutes to start its browser (30 s was too short on a busy machine); the review and glass stories, which had not run, now pass, and a review-story bug (two "4 stars" on the page) is fixed. | this commit |
 | Phone drawers | Bag and filters rise from the bottom on phones and swipe away; side panels stay on desktop. No half-height stop: it hid the "Show garments" button. | `b995630` |
 | Frosted glass | One definition (`frontend/lib/glass.ts`), three strengths: dialogs, sheets and drawers; things floating over photos (Tailored-by card, Bespoke badge); the phone buy bar. The secondary button is now the site-wide glass button. | `b995630` |
@@ -45,13 +46,15 @@ run before it is committed. If a story could not be run, the entry says so.
 Agreed or proposed, roughly in order:
 
 1. **Motion from movin.design** (proposed): product photo flowing into the product page; second photo on card hover; a calm "Added ✓" on Add to bag; header that hides on scroll down; soft page fades; an order-placed moment.
-2. **Bespoke orders through the bag** (agreed list, item 8).
-3. **Trust strip** with real facts (coverage stated, fully lined, free Maharashtra delivery, tailored in Kurla). Proposed.
-4. **Frosted-glass icons** - waiting for the subject (categories? trust points?) and approval of CSS animation inside the SVG files.
-5. **Review photos** through the face-blur pipeline.
-6. **Payment gateway** (Razorpay) - deliberately last; the backend is largely ready.
+2. **Trust strip** with real facts (coverage stated, fully lined, free Maharashtra delivery, tailored in Kurla). Proposed.
+3. **Frosted-glass icons** - waiting for the subject (categories? trust points?) and approval of CSS animation inside the SVG files.
+4. **Review photos** through the face-blur pipeline.
+5. **Payment gateway** (Razorpay) - deliberately last; the backend is largely ready.
 
 ## Waiting on the owner
+
+- Confirm with the accountant: the stitching surcharge is taxed with the garment, at the garment's GST rate (one composite supply). That is how checkout charges it now.
+- In Django admin, every bespoke product needs a "Made to measure" variant (size CUSTOM, stock 0); without one the product page falls back to "call the atelier".
 
 - Photography and vector logos.
 - Policy details shown in each page's draft box: return window and refunds, dispatch times and couriers, grievance officer, customer-care email, opening hours, legal name and GSTIN, record retention. A lawyer should read Privacy and Terms.

@@ -51,6 +51,15 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
       ? purchasable.find((v) => v.colour === colour && v.size === selection.size)
       : undefined;
 
+  // Made to measure: the CUSTOM variant is never stocked, so it is not among
+  // `purchasable`. Prefer the chosen colour's; one per product is enough.
+  const custom = product.supports_bespoke
+    ? (product.variants.find((v) => v.is_active && v.size === "CUSTOM" && v.colour === colour) ??
+      product.variants.find((v) => v.is_active && v.size === "CUSTOM"))
+    : undefined;
+  const bespokePrice = (custom ? Number(custom.price) : Number(product.base_price)) + Number(product.bespoke_surcharge);
+  const bespokeReady = selection?.mode === "bespoke" && custom !== undefined && selection.measurements !== undefined;
+
   function chooseColour(next: string) {
     setColour(next);
     // The chosen size may not exist in the new colour; ask again.
@@ -58,6 +67,26 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
   }
 
   function addToBag() {
+    if (bespokeReady && custom && selection?.measurements) {
+      addItem({
+        variantId: custom.id,
+        name: product.name,
+        price: bespokePrice,
+        image: product.primary_image ?? "",
+        colour: custom.colour,
+        size: "Made to measure",
+        quantity: 1,
+        bespoke: {
+          measurements: Object.fromEntries(
+            Object.entries(selection.measurements).filter((entry): entry is [string, number] => entry[1] !== undefined),
+          ),
+          // "Add full lining" in the fit drawer is the atelier's lining preference.
+          preferences: selection.fullLining ? { lining_preference: "full" } : {},
+        },
+      });
+      openBag(true);
+      return;
+    }
     if (!variant) return;
     addItem({
       variantId: variant.id,
@@ -71,7 +100,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
     openBag(true);
   }
 
-  if (purchasable.length === 0) {
+  if (purchasable.length === 0 && !custom) {
     return (
       <p className="text-sm text-muted-foreground">
         Currently made to order only. Call the atelier on{" "}
@@ -110,10 +139,18 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
           reach however far the shopper has scrolled; inline from md up. */}
       <div className={cn("flex gap-3 max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:border-t max-md:p-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]", GLASS.phoneBar)}>
         <Button variant="outline" size="lg" className="flex-1" onClick={() => setOpen(true)}>
-          {selection?.mode === "standard" ? `Size ${selection.size} · Change` : "Select your fit"}
+          {selection?.mode === "standard"
+            ? `Size ${selection.size} · Change`
+            : selection?.mode === "bespoke"
+              ? "Made to measure · Change"
+              : "Select your fit"}
         </Button>
-        <Button size="lg" className="flex-1" onClick={addToBag} disabled={!variant}>
-          {variant ? `Add to bag · ${formatINR(variant.price)}` : "Add to bag"}
+        <Button size="lg" className="flex-1" onClick={addToBag} disabled={!variant && !bespokeReady}>
+          {variant
+            ? `Add to bag · ${formatINR(variant.price)}`
+            : bespokeReady
+              ? `Add to bag · ${formatINR(bespokePrice)}`
+              : "Add to bag"}
         </Button>
       </div>
 
@@ -123,7 +160,15 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
         </p>
       )}
 
-      {selection?.mode === "bespoke" && (
+      {selection?.mode === "bespoke" && custom && (
+        <div role="status" className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          Your measurements are ready. {ATELIER.name} checks them before cutting, and stitches your piece in{" "}
+          {product.stitching_days} days from your order.
+        </div>
+      )}
+
+      {/* No made-to-measure variant set up in the admin yet: the atelier takes the order by phone. */}
+      {selection?.mode === "bespoke" && !custom && (
         <div role="status" className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           Your measurements are saved. Bespoke pieces are confirmed personally by{" "}
           {ATELIER.name}: call{" "}
@@ -136,7 +181,7 @@ export function ProductPurchasePanel({ product }: { product: ProductDetail }) {
 
       {product.supports_bespoke && (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Bespoke tailoring from {formatINR(product.base_price)} plus surcharge ·{" "}
+          Bespoke tailoring from {formatINR(bespokePrice)}, stitching included ·{" "}
           {product.stitching_days} days
         </p>
       )}

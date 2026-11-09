@@ -1,10 +1,10 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ChaseLoader } from "@/components/ChaseLoader";
 import { CheckoutStepper } from "@/components/CheckoutStepper";
 import { buttonVariants } from "@/components/ui/button";
 import { ApiError, api } from "@/lib/api/client";
@@ -41,11 +41,14 @@ export function CheckoutFlow() {
     }
     let cancelled = false;
     api.cart
-      .replace(bag.map((item) => ({ variant_id: item.variantId, quantity: item.quantity })))
+      .replace(
+        bag.map((item) => ({ variant_id: item.variantId, quantity: item.quantity, bespoke: item.bespoke })),
+      )
       .then(({ skipped }) => {
         if (cancelled) return;
-        const removed = bag.filter((item) => skipped.includes(item.variantId));
-        removed.forEach((item) => removeItem(item.variantId));
+        // Only ready-made lines are ever skipped (sold out); bespoke ones fail loudly instead.
+        const removed = bag.filter((item) => !item.bespoke && skipped.includes(item.variantId));
+        removed.forEach((item) => removeItem(item.lineId));
         setStage(
           removed.length === bag.length
             ? { kind: "empty" }
@@ -58,6 +61,15 @@ export function CheckoutFlow() {
           router.replace("/account/sign-in?next=/checkout");
           return;
         }
+        // 400: measurements on a bespoke piece the atelier cannot cut from. The
+        // server's reason is customer-safe and says what to fix.
+        if (error instanceof ApiError && error.status === 400) {
+          setStage({
+            kind: "failed",
+            message: `${error.message} Remove that piece from your bag and add it again with corrected measurements.`,
+          });
+          return;
+        }
         setStage({ kind: "failed", message: "We couldn't load your bag. Please refresh to try again." });
       });
     return () => {
@@ -67,8 +79,8 @@ export function CheckoutFlow() {
 
   if (stage.kind === "syncing") {
     return (
-      <p role="status" className="flex items-center gap-2 text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+      <p role="status" className="flex items-center gap-3 text-muted-foreground">
+        <ChaseLoader decorative className="text-2xl text-primary" />
         Preparing your order…
       </p>
     );

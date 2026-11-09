@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { expect, screen } from "storybook/test";
 
 import { CartDrawer } from "@/components/CartDrawer";
 import { useCartStore } from "@/store/useCartStore";
 
-import { BAG } from "../tests/fixtures/commerce";
+import { BAG, BESPOKE_LINE } from "../tests/fixtures/commerce";
 
-/** The bag (shadcn Sheet). State lives in the real zustand store. */
+/** The bag: a drawer on phones, a sheet from tablet up. State lives in the real zustand store. */
 const meta = {
   title: "Commerce/CartDrawer",
   component: CartDrawer,
@@ -24,3 +25,13 @@ function openWith(items: typeof BAG) {
 
 export const WithItems: Story = { beforeEach: openWith(BAG) };
 export const Empty: Story = { beforeEach: openWith([]) };
+
+/** A ready-made piece beside a made-to-measure one: the bespoke line is one piece, with no quantity stepper. */
+export const WithABespokePiece: Story = {
+  beforeEach: openWith([BAG[0]!, BESPOKE_LINE]),
+  play: async () => {
+    await expect(await screen.findByText("Made to measure · stitched for you")).toBeInTheDocument();
+    // Only the ready-made line can change quantity.
+    await expect(screen.getAllByRole("button", { name: /Increase quantity/ })).toHaveLength(1);
+  },
+};

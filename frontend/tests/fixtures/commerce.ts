@@ -76,6 +76,7 @@ export const QUOTE: CheckoutQuote = {
       product_name: PRODUCT.name,
       variant_label: "M / Ivory",
       quantity: 1,
+      is_bespoke: false,
       unit_price: "12000.00",
       line_total: "12000.00",
     },
@@ -114,8 +115,8 @@ export const CUSTOMER: SessionUser = {
 };
 
 export const BAG: CartItem[] = [
-  { variantId: "v-m-ivory", name: PRODUCT.name, price: 12000, quantity: 1, image: "", colour: "Ivory", size: "M" },
-  { variantId: "v-m-sage", name: PRODUCT.name, price: 12500, quantity: 2, image: "", colour: "Sage", size: "M" },
+  { lineId: "v-m-ivory", variantId: "v-m-ivory", name: PRODUCT.name, price: 12000, quantity: 1, image: "", colour: "Ivory", size: "M" },
+  { lineId: "v-m-sage", variantId: "v-m-sage", name: PRODUCT.name, price: 12500, quantity: 2, image: "", colour: "Sage", size: "M" },
 ];
 
 /** Filter counts for the whole catalogue, as /catalog/products/facets/ returns them. */
@@ -157,4 +158,20 @@ export const FACETS: Facets = {
   ],
   supports_bespoke: 5,
   total: 9,
+};
+
+/** A made-to-measure piece in the bag: one line per piece, surcharge included in its price. */
+export const BESPOKE_LINE: CartItem = {
+  lineId: "bespoke-1",
+  variantId: "v-custom",
+  name: PRODUCT.name,
+  price: 15000,
+  quantity: 1,
+  image: "",
+  colour: "Ivory",
+  size: "CUSTOM",
+  bespoke: {
+    measurements: { bust: 36, waist: 30, hip: 38, shoulder: 14, kameez_length: 42, sleeve_length: 22 },
+    preferences: { lining_preference: "full" },
+  },
 };

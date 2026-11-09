@@ -301,6 +301,23 @@ class Command(BaseCommand):
                     },
                 )
 
+            # Bespoke pieces are ordered through their made-to-measure
+            # variant, which is never stocked (it is stitched per order).
+            if product.supports_bespoke:
+                first = variants[0]
+                ProductVariant.objects.get_or_create(
+                    product=product,
+                    size=SizeStandard.CUSTOM,
+                    colour=first[2],
+                    defaults={
+                        "sku": f"{first[0].rsplit('-', 1)[0]}-CUS",
+                        "colour_hex": first[3],
+                        "stock_quantity": 0,
+                        "weight_grams": 900,
+                        "is_active": True,
+                    },
+                )
+
         self.stdout.write(
             self.style.SUCCESS(
                 f"Seeded {Product.objects.count()} products "

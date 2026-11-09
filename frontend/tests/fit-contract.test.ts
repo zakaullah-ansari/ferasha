@@ -254,6 +254,29 @@ describe("cross-field rules mirror the serializer", () => {
     }
   });
 
+  it("accepts a slim waist with a fuller bust, as the server does (the rule is one-sided)", () => {
+    const result = fitProfileSchema("suit_set").safeParse({
+      bust: 50,
+      waist: 24,
+      hip: 44,
+      shoulder: 16,
+      kameez_length: 42,
+      sleeve_length: 22,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    ["wrist above bicep", { wrist: 12, bicep: 10 }, /Wrist cannot exceed bicep/],
+    ["knee above thigh", { knee: 26, thigh: 20 }, /Knee cannot exceed thigh/],
+    ["kameez far beyond trouser", { kameez_length: 60, trouser_length: 30 }, /Kameez length is implausibly long/],
+    ["ghera narrower than flare", { ghera: 60, farshi_flare: 80 }, /Ghera \(hem sweep\) cannot be narrower/],
+  ])("rejects %s, as the server does", (_, values, message) => {
+    const rule = CROSS_FIELD_RULES.find((candidate) => candidate.applies(values))!;
+    expect(rule.valid(values)).toBe(false);
+    expect(rule.message).toMatch(message);
+  });
+
   it("skips a rule when its fields are absent", () => {
     // A rule must not fire on data it cannot evaluate.
     for (const rule of CROSS_FIELD_RULES) {

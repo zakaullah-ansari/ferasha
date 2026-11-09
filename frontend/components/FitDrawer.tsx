@@ -11,6 +11,7 @@ import {
 } from "@/lib/api/fit-schema";
 import { cn } from "@/lib/cn";
 import { type Unit, fromDisplay, toDisplay } from "@/lib/units";
+import { FIT_DRAFT_KEY } from "@/lib/fit-draft";
 
 /**
  * The FitDrawer — standard sizing or full bespoke measurement entry.
@@ -61,7 +62,6 @@ function isFocusable(element: HTMLElement): boolean {
   }
   return true;
 }
-const DRAFT_KEY = "ferasha:fit-draft:v1";
 
 export interface FitSelection {
   readonly mode: "standard" | "bespoke";
@@ -111,7 +111,7 @@ export function FitDrawer({
   useEffect(() => {
     if (!open) return;
     try {
-      const raw = window.localStorage.getItem(DRAFT_KEY);
+      const raw = window.localStorage.getItem(FIT_DRAFT_KEY);
       if (!raw) return;
       const draft = JSON.parse(raw) as {
         values?: Partial<Record<MeasurementName, number>>;
@@ -123,7 +123,7 @@ export function FitDrawer({
       if (draft.fullLining !== undefined) setFullLining(draft.fullLining);
     } catch {
       // A corrupt draft must never block the drawer from opening.
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(FIT_DRAFT_KEY);
     }
   }, [open]);
 
@@ -132,7 +132,7 @@ export function FitDrawer({
     const id = window.setTimeout(() => {
       try {
         window.localStorage.setItem(
-          DRAFT_KEY,
+          FIT_DRAFT_KEY,
           JSON.stringify({ values, unit, fullLining }),
         );
       } catch {
@@ -242,7 +242,7 @@ export function FitDrawer({
     if (!validate()) return;
     onSubmit({ mode: "bespoke", measurements: values, fullLining });
     try {
-      window.localStorage.removeItem(DRAFT_KEY);
+      window.localStorage.removeItem(FIT_DRAFT_KEY);
     } catch {
       /* non-fatal */
     }

@@ -7,15 +7,32 @@ import { persist } from 'zustand/middleware';
  * signing in. Prices here are for display only: checkout re-prices every line
  * on the server, and the server cart is replaced by this bag at that point.
  */
+/** A made-to-measure piece: measurements in inches, and stitching preferences. */
+export interface BespokeChoice {
+  measurements: Record<string, number>;
+  preferences: Record<string, string>;
+}
+
 export interface CartItem {
+  /**
+   * The line's own identity. A ready-made line is its variant (adding it
+   * again adds to the quantity); every bespoke piece is a line of its own,
+   * so two pieces cut to different measurements never merge.
+   */
+  lineId: string;
   variantId: string;
   quantity: number;
   name: string;
+  /** One piece, including the stitching surcharge for a bespoke line. */
   price: number;
   image: string;
   colour: string;
   size: string;
+  /** Present for a made-to-measure line, which is always one piece. */
+  bespoke?: BespokeChoice;
 }
+
+export type NewCartItem = Omit<CartItem, "lineId">;
 
 interface CartState {
   items: CartItem[];
@@ -24,55 +41,66 @@ interface CartState {
   // Actions
   toggleDrawer: () => void;
   setDrawerOpen: (open: boolean) => void;
-  addItem: (item: CartItem) => void;
-  removeItem: (variantId: string) => void;
-  updateQuantity: (variantId: string, quantity: number) => void;
+  addItem: (item: NewCartItem) => void;
+  removeItem: (lineId: string) => void;
+  updateQuantity: (lineId: string, quantity: number) => void;
   clearCart: () => void;
 }
 
 export const useCartStore = create<CartState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       items: [],
       isOpen: false,
 
       toggleDrawer: () => set((state) => ({ isOpen: !state.isOpen })),
       setDrawerOpen: (open) => set({ isOpen: open }),
 
-      addItem: (newItem) => set((state) => {
-        const existingItem = state.items.find(i => i.variantId === newItem.variantId);
-        if (existingItem) {
-          return {
-            items: state.items.map(i =>
-              i.variantId === newItem.variantId
-                ? { ...i, quantity: i.quantity + newItem.quantity }
-                : i
-            )
-          };
-        }
-        return { items: [...state.items, newItem] };
-      }),
+      addItem: (newItem) =>
+        set((state) => {
+          if (newItem.bespoke) {
+            return { items: [...state.items, { ...newItem, quantity: 1, lineId: `bespoke-${crypto.randomUUID()}` }] };
+          }
+          const lineId = newItem.variantId;
+          const existing = state.items.find((item) => item.lineId === lineId);
+          if (existing) {
+            return {
+              items: state.items.map((item) =>
+                item.lineId === lineId ? { ...item, quantity: item.quantity + newItem.quantity } : item,
+              ),
+            };
+          }
+          return { items: [...state.items, { ...newItem, lineId }] };
+        }),
 
-      removeItem: (variantId) => set((state) => ({
-        items: state.items.filter(i => i.variantId !== variantId)
-      })),
+      removeItem: (lineId) => set((state) => ({ items: state.items.filter((item) => item.lineId !== lineId) })),
 
-      updateQuantity: (variantId, quantity) => set((state) => ({
-        items: state.items.map(i =>
-          i.variantId === variantId
-            ? { ...i, quantity: Math.max(1, quantity) }
-            : i
-        )
-      })),
+      updateQuantity: (lineId, quantity) =>
+        set((state) => ({
+          items: state.items.map((item) =>
+            // A bespoke piece is always one: each is cut to its own measurements.
+            item.lineId === lineId && !item.bespoke ? { ...item, quantity: Math.max(1, quantity) } : item,
+          ),
+        })),
 
       clearCart: () => set({ items: [] }),
     }),
     {
-      name: 'ferasha-cart-storage',
+      name: "ferasha-cart-storage",
       // Persist the lines only; an open drawer must not survive a reload.
       partialize: (state) => ({ items: state.items }),
-    }
-  )
+      // v2 added lineId. A bag saved before it was all ready-made lines,
+      // whose identity is their variant.
+      version: 2,
+      migrate: (persisted, version) => {
+        const saved = (persisted ?? {}) as { items?: Omit<CartItem, "lineId">[] };
+        if (version < 2) {
+          return { items: (saved.items ?? []).map((item) => ({ ...item, lineId: item.variantId })) };
+        }
+        return saved as { items: CartItem[] };
+      },
+    },
+  ),
 );
 
 /**
