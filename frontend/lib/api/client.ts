@@ -199,6 +199,16 @@ export const api = {
     updateProfile(details: { full_name: string; phone: string }): Promise<SessionUser> {
       return send("/api/v1/auth/me/", { method: "PATCH", body: details });
     },
+    /** Always "accepted": the answer never reveals whether an account exists. */
+    requestPasswordReset(email: string): Promise<{ detail: string }> {
+      return send("/api/v1/auth/password/reset/request/", { method: "POST", body: { email } });
+    },
+    resetPassword(details: { token: string; new_password: string; new_password_confirm: string }): Promise<{ detail: string }> {
+      return send("/api/v1/auth/password/reset/confirm/", { method: "POST", body: details });
+    },
+    confirmEmail(token: string): Promise<{ detail: string }> {
+      return send("/api/v1/auth/email/verify/confirm/", { method: "POST", body: { token } });
+    },
     /** Revokes every session, this one included: the caller must sign in again. */
     changePassword(details: {
       current_password: string;

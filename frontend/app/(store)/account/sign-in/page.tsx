@@ -7,7 +7,8 @@ import { hasSession, safeNextPath } from "@/lib/api/server";
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 
 const NOTICES = {
-  passwordChanged: "Your password has been changed. Please sign in with the new one.",
+  "password-changed": "Your password has been changed. Please sign in with the new one.",
+  "password-reset": "Your password has been reset. Please sign in with the new one.",
 } as const;
 
 export default async function SignInPage({
@@ -18,7 +19,8 @@ export default async function SignInPage({
   const params = await searchParams;
   const next = safeNextPath(params.next);
   // Fixed wording per reason: nothing from the URL is ever shown as text.
-  const notice = params.reason === "password-changed" ? NOTICES.passwordChanged : undefined;
+  const reason = Array.isArray(params.reason) ? params.reason[0] : params.reason;
+  const notice = reason && Object.hasOwn(NOTICES, reason) ? NOTICES[reason as keyof typeof NOTICES] : undefined;
   if (await hasSession()) redirect(next);
   return (
     <div className="mx-auto flex max-w-6xl justify-center px-5 py-16">

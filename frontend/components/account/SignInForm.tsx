@@ -6,8 +6,9 @@ import { type FormEvent, useState } from "react";
 
 import { FormField } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError, api } from "@/lib/api/client";
+
+import { AuthCard } from "./AuthCard";
 
 export function SignInForm({ next, notice }: { readonly next: string; readonly notice?: string }) {
   const router = useRouter();
@@ -37,52 +38,50 @@ export function SignInForm({ next, notice }: { readonly next: string; readonly n
   const registerHref = `/account/register${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`;
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
-        <CardDescription>Sign in to check out and follow your orders.</CardDescription>
-        {notice && (
-          <p role="status" className="mt-2 rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary">
-            {notice}
+    <AuthCard
+      title="Welcome back"
+      description="Sign in to check out and follow your orders."
+      notice={notice}
+      footer={
+        <>
+          New to Ferasha?&nbsp;
+          <Link href={registerHref} className="text-foreground underline underline-offset-4">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={submit} className="grid gap-4">
+        <FormField
+          id="sign-in-email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
+        <FormField
+          id="sign-in-password"
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
           </p>
         )}
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="grid gap-4">
-          <FormField
-            id="sign-in-email"
-            label="Email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <FormField
-            id="sign-in-password"
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          {error && (
-            <p role="alert" className="text-sm text-destructive">
-              {error}
-            </p>
-          )}
-          <Button type="submit" size="lg" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="text-sm text-muted-foreground">
-        New to Ferasha?&nbsp;
-        <Link href={registerHref} className="text-foreground underline underline-offset-4">
-          Create an account
+        <Button type="submit" size="lg" disabled={busy}>
+          {busy ? "Signing in…" : "Sign in"}
+        </Button>
+        <Link href="/account/forgot-password" className="justify-self-center text-sm text-muted-foreground underline-offset-4 hover:underline">
+          Forgot your password?
         </Link>
-      </CardFooter>
-    </Card>
+      </form>
+    </AuthCard>
   );
 }
