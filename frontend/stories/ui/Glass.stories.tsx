@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { ChaseLoader } from "@/components/ChaseLoader";
 import { ResponsivePanel } from "@/components/ResponsivePanel";
@@ -71,24 +71,44 @@ export const Loader: Story = {
   ),
 };
 
+function BagPanelDemo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>Open the bag</Button>
+      <ResponsivePanel
+        open={open}
+        onOpenChange={setOpen}
+        title="Your bag"
+        description="2 pieces"
+        footer={<Button size="lg" className="w-full">Proceed to checkout</Button>}
+      >
+        <p className="py-6 text-sm text-muted-foreground">Bag contents.</p>
+      </ResponsivePanel>
+    </>
+  );
+}
+
 /** On a phone: a drawer from the bottom that swipes away, its footer always on screen. */
 export const PhoneDrawer: Story = {
   parameters: { viewport: { defaultViewport: "mobile1" } },
-  render: function Render() {
-    const [open, setOpen] = useState(false);
-    return (
-      <>
-        <Button onClick={() => setOpen(true)}>Open the bag</Button>
-        <ResponsivePanel
-          open={open}
-          onOpenChange={setOpen}
-          title="Your bag"
-          description="2 pieces"
-          footer={<Button size="lg" className="w-full">Proceed to checkout</Button>}
-        >
-          <p className="py-6 text-sm text-muted-foreground">Bag contents.</p>
-        </ResponsivePanel>
-      </>
-    );
+  render: () => <BagPanelDemo />,
+};
+
+/**
+ * From tablet up: the same rounded, floating drawer, sliding in from the
+ * right - never a sharp-edged slab. Mouse and keyboard close it with the X.
+ */
+export const DesktopDrawer: Story = {
+  render: () => <BagPanelDemo />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: "Open the bag" }));
+    const body = within(canvasElement.ownerDocument.body);
+    const dialog = await body.findByRole("dialog", { name: "Your bag" });
+    const popup = dialog.closest<HTMLElement>('[data-slot="drawer-popup"]') ?? dialog;
+    await expect(popup.dataset.swipeDirection).toBe("right");
+    await expect(parseFloat(getComputedStyle(popup).borderTopLeftRadius)).toBeGreaterThan(16);
+    await userEvent.click(body.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(body.queryByRole("dialog", { name: "Your bag" })).not.toBeInTheDocument());
   },
 };

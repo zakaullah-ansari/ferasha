@@ -6,7 +6,7 @@ import { useCartStore } from "@/store/useCartStore";
 
 import { BAG, BESPOKE_LINE } from "../tests/fixtures/commerce";
 
-/** The bag: a drawer on phones, a sheet from tablet up. State lives in the real zustand store. */
+/** The bag: the theme's rounded drawer, from the bottom on phones and from the right from tablet up. State lives in the real zustand store. */
 const meta = {
   title: "Commerce/CartDrawer",
   component: CartDrawer,

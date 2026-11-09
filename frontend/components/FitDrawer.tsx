@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import {
   type GarmentType,
@@ -12,6 +13,7 @@ import {
 import { cn } from "@/lib/cn";
 import { type Unit, fromDisplay, toDisplay } from "@/lib/units";
 import { FIT_DRAFT_KEY } from "@/lib/fit-draft";
+import { GLASS } from "@/lib/glass";
 
 /**
  * The FitDrawer — standard sizing or full bespoke measurement entry.
@@ -253,7 +255,9 @@ export function FitDrawer({
 
   const unitLabel = unit === "inch" ? "in" : "cm";
 
-  return (
+  // Portalled to <body>, like every other dialog: rendered in place it sat
+  // inside the page-fade wrapper's stacking context, under the sticky header.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop. aria-hidden because the dialog below is the accessible
           surface; clicking it is a convenience, Escape is the contract. */}
@@ -271,10 +275,13 @@ export function FitDrawer({
         aria-modal="true"
         aria-labelledby={headingId}
         className={cn(
-          "relative flex h-full w-full flex-col bg-background shadow-2xl",
+          // The theme's floating panel, the same as the bag and filters:
+          // inset from the edges, rounded-4xl, frosted.
+          "relative m-2 flex w-[calc(100%-1rem)] flex-col overflow-hidden rounded-4xl",
+          GLASS.panel,
           // Bottom sheet on phones, side drawer from md up.
-          "max-md:mt-auto max-md:h-[92vh] max-md:rounded-t-2xl",
-          "md:max-w-lg",
+          "max-md:mt-auto max-md:h-[calc(92dvh-0.5rem)]",
+          "md:h-[calc(100%-1rem)] md:max-w-lg",
         )}
       >
         <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
@@ -478,6 +485,7 @@ export function FitDrawer({
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

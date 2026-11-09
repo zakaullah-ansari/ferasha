@@ -19,7 +19,7 @@ export function MobileNav() {
       <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Open menu" className="md:hidden" />}>
         <Menu />
       </SheetTrigger>
-      <SheetContent side="left" className="w-full sm:max-w-sm">
+      <SheetContent side="left">
         <SheetHeader>
           <SheetTitle className="font-display text-2xl">Ferasha</SheetTitle>
         </SheetHeader>
