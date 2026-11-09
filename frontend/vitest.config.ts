@@ -40,6 +40,11 @@ export default defineConfig({
         browser: {
           enabled: true,
           headless: true,
+          // The default 30 s is too short for the first bundle on a busy dev machine
+          // (Docker, the dev server and the API all running): runs died before any
+          // story executed. A failing story still fails; this only stops the
+          // runner giving up before it starts.
+          connectTimeout: 180_000,
           provider: playwright(),
           instances: [{
             browser: 'chromium'

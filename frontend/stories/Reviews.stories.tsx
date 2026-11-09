@@ -80,7 +80,7 @@ export const WriteAReview: Story = {
     await userEvent.click(await canvas.findByRole("button", { name: "Write a review" }));
     await userEvent.click(canvas.getByRole("button", { name: "Send review" }));
     await expect(canvas.getByText("Choose from one to five stars.")).toBeInTheDocument();
-    await userEvent.click(canvas.getByText("4 stars"));
+    await userEvent.click(canvas.getByRole("radio", { name: "4 stars" }));
     await userEvent.type(canvas.getByLabelText("Your review"), "Beautifully lined.");
     await userEvent.click(canvas.getByRole("button", { name: "Send review" }));
     await expect(await canvas.findByText(/once the atelier has read it/)).toBeInTheDocument();
@@ -97,7 +97,7 @@ export const AlreadyReviewed: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Write a review" }));
-    await userEvent.click(canvas.getByText("5 stars"));
+    await userEvent.click(canvas.getByRole("radio", { name: "5 stars" }));
     await userEvent.click(canvas.getByRole("button", { name: "Send review" }));
     await expect(await canvas.findByRole("alert")).toHaveTextContent("You have already reviewed this product.");
   },
