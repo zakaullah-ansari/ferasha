@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import type { SessionUser } from "@/lib/api/types";
+import { signOut as endSession } from "@/lib/sign-out";
 import { selectItemCount, useBagHydrated, useCartStore } from "@/store/useCartStore";
 
 /**
@@ -41,7 +42,7 @@ export function HeaderActions() {
   }, [pathname]);
 
   async function signOut() {
-    await api.session.signOut().catch(() => undefined);
+    await endSession();
     setUser(null);
     router.refresh();
   }

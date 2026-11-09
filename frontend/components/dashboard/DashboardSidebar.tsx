@@ -32,6 +32,7 @@ import {
 import { ADMIN_LINKS } from "@/lib/admin-links";
 import { api } from "@/lib/api/client";
 import type { SessionUser } from "@/lib/api/types";
+import { signOut as endSession } from "@/lib/sign-out";
 
 const WORK = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -56,7 +57,7 @@ export function DashboardSidebar({ user }: { user: Pick<SessionUser, "full_name"
   const isActive = (href: string) => (href === "/dashboard" ? pathname === href : pathname.startsWith(href));
 
   async function signOut() {
-    await api.session.signOut().catch(() => undefined);
+    await endSession();
     router.push("/");
     router.refresh();
   }

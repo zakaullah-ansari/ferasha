@@ -6,6 +6,7 @@ import { type FormEvent, useState } from "react";
 import { FormField, fieldErrors } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
 import { ApiError, api } from "@/lib/api/client";
+import { signOut } from "@/lib/sign-out";
 
 const EMPTY = { current_password: "", new_password: "", new_password_confirm: "" };
 
@@ -34,7 +35,7 @@ export function PasswordForm() {
     try {
       await api.session.changePassword(form);
       // The server has already revoked the session; clear its cookies too.
-      await api.session.signOut().catch(() => undefined);
+      await signOut();
       router.replace("/account/sign-in?next=/account&reason=password-changed");
       router.refresh();
     } catch (caught) {

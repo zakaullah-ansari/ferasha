@@ -11,8 +11,6 @@
  * because a relative path has no origin to resolve against there.
  */
 
-import { clearFitDraft } from "@/lib/fit-draft";
-
 import type {
   Category,
   CheckoutQuote,
@@ -211,9 +209,8 @@ export const api = {
     register(details: Registration): Promise<{ user: SessionUser }> {
       return send("/api/session/register", { method: "POST", body: details }, true);
     },
-    /** Also forgets any unsent measurements, before the request: a failed sign-out must not leave them. */
+    /** Transport only: call lib/sign-out, which also forgets measurements kept in this browser. */
     signOut(): Promise<void> {
-      clearFitDraft();
       return send("/api/session/logout", { method: "POST" }, true);
     },
     updateProfile(details: { full_name: string; phone: string }): Promise<SessionUser> {

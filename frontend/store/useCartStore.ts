@@ -45,6 +45,8 @@ interface CartState {
   removeItem: (lineId: string) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   clearCart: () => void;
+  /** Drop every made-to-measure piece (and with it, its measurements). Used at sign-out. */
+  forgetMeasurements: () => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -84,6 +86,8 @@ export const useCartStore = create<CartState>()(
         })),
 
       clearCart: () => set({ items: [] }),
+
+      forgetMeasurements: () => set((state) => ({ items: state.items.filter((item) => !item.bespoke) })),
     }),
     {
       name: "ferasha-cart-storage",
