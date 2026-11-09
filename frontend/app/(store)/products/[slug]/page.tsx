@@ -1,4 +1,3 @@
-import { Truck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -8,6 +7,7 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductRail } from "@/components/product/ProductRail";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductPurchasePanel } from "@/components/ProductPurchasePanel";
+import { TrustStrip } from "@/components/site/TrustStrip";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { ApiError, api } from "@/lib/api/client";
 import type { ReviewSummary } from "@/lib/api/types";
-import { DELIVERY } from "@/lib/delivery";
 import { formatINR } from "@/lib/format";
 
 export const revalidate = 60;
@@ -132,10 +131,7 @@ export default async function ProductPage({
             <ProductPurchasePanel product={product} />
           </div>
 
-          <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-            <Truck aria-hidden="true" className="size-4" />
-            {DELIVERY.summary}
-          </p>
+          <TrustStrip compact className="mt-6" />
 
           <div className="mt-8">
             <ProductDetails product={product} />

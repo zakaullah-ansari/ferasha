@@ -1,8 +1,8 @@
-import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { OrderPlacedTick, WhatHappensNext } from "@/components/account/OrderPlaced";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +50,7 @@ export default async function OrderPage({
         ← Your orders
       </Link>
       <header className="space-y-3 text-center">
-        {justPlaced && <CheckCircle2 className="mx-auto size-10 text-primary" aria-hidden="true" />}
+        {justPlaced && <OrderPlacedTick />}
         <h1 className="font-display text-display-sm">
           {justPlaced ? "Thank you, your order is placed" : `Order ${order.order_number}`}
         </h1>
@@ -59,6 +59,21 @@ export default async function OrderPage({
         </p>
         <Badge variant="secondary">{orderStatus(order.status).customer}</Badge>
       </header>
+
+      {/* Only while the order is in hand: a cancelled order has no next steps. */}
+      {justPlaced && (order.status === "placed" || order.status === "payment_confirmed") && (
+        <Card>
+          <CardHeader>
+            <CardTitle>What happens next</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WhatHappensNext
+              awaitingPayment={order.status === "placed"}
+              bespoke={order.lines.some((line) => line.is_bespoke)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

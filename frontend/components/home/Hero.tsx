@@ -52,13 +52,6 @@ export function Hero() {
             </a>
           </div>
         </BlurFade>
-        <BlurFade delay={0.8}>
-          <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-xs text-muted-foreground">
-            <li>Coverage stated on every piece</li>
-            <li>Fully lined options</li>
-            <li>Free delivery in Maharashtra</li>
-          </ul>
-        </BlurFade>
       </div>
 
       <div className="relative">

@@ -7,6 +7,9 @@
  * construction - only by an empty catalogue.
  */
 
+import { ATELIER } from "@/lib/brand";
+import { DELIVERY } from "@/lib/delivery";
+
 export interface NavLink {
   readonly label: string;
   readonly href: string;
@@ -45,8 +48,8 @@ export const HELP: readonly NavLink[] = [
 export const FULLY_COVERED: NavLink = { label: "Shop fully covered", href: "/products?fully_covered=true" };
 
 export const ANNOUNCEMENTS: readonly string[] = [
-  "Free delivery within Maharashtra",
-  "Tailored by Kausar Dezine Studio, Kurla",
+  DELIVERY.home,
+  `Tailored by ${ATELIER.name}, Kurla`,
   "Every garment states its coverage",
   "Bespoke fittings by appointment",
 ];
