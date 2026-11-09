@@ -46,3 +46,10 @@ export function formatDay(isoDate: string): string {
 export function formatMoment(isoDateTime: string | null): string {
   return isoDateTime ? MOMENT.format(new Date(isoDateTime)) : "—";
 }
+
+const DATE = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
+
+/** A timestamp as a date in Mumbai: "5 Nov 2026". */
+export function formatDate(isoDateTime: string): string {
+  return DATE.format(new Date(isoDateTime));
+}

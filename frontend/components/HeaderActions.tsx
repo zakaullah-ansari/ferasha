@@ -75,7 +75,13 @@ export function HeaderActions() {
               Dashboard
             </Link>
           )}
-          <Link href="/account" className="hidden text-muted-foreground hover:text-foreground sm:inline">
+          {/* The person icon marks this as the account, so a first name never reads as another menu item. */}
+          <Link
+            href="/account"
+            className="hidden items-center gap-1.5 text-muted-foreground hover:text-foreground sm:inline-flex"
+          >
+            <User className="size-4" aria-hidden="true" />
+            <span className="sr-only">Your account: </span>
             {user.full_name.split(" ")[0] || user.email}
           </Link>
           <Button variant="ghost" size="sm" onClick={signOut}>

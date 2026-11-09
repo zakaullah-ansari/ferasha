@@ -16,12 +16,15 @@ import type {
   CheckoutQuote,
   DeliveryAddress,
   Facets,
+  NewReview,
   OrderDetail,
   Paginated,
   PlacedOrder,
   ProductDetail,
   ProductSummary,
   Registration,
+  Review,
+  ReviewSummary,
   SessionUser,
   TaxQuote,
 } from "./types";
@@ -155,6 +158,19 @@ export const api = {
 
   getCategory(slug: string): Promise<Category> {
     return get<Category>(`/api/v1/catalog/categories/${encodeURIComponent(slug)}/`);
+  },
+
+  getReviews(productId: string): Promise<Paginated<Review>> {
+    return get<Paginated<Review>>(`/api/v1/reviews/${toQuery({ product: productId })}`);
+  },
+
+  getReviewSummary(productId: string): Promise<ReviewSummary> {
+    return get<ReviewSummary>(`/api/v1/reviews/summary/${toQuery({ product: productId })}`);
+  },
+
+  /** Signed in only. The review waits for the atelier's moderation before anyone else sees it. */
+  createReview(review: NewReview): Promise<Review> {
+    return send("/api/v1/reviews/", { method: "POST", body: review });
   },
 
   getProduct(slug: string): Promise<ProductDetail> {

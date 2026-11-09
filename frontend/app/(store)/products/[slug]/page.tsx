@@ -6,6 +6,7 @@ import { CoverageScore, ModestyBadgeList } from "@/components/ModestyBadge";
 import { ProductDetails } from "@/components/product/ProductDetails";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductRail } from "@/components/product/ProductRail";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductPurchasePanel } from "@/components/ProductPurchasePanel";
 import {
   Breadcrumb,
@@ -16,10 +17,19 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ApiError, api } from "@/lib/api/client";
+import type { ReviewSummary } from "@/lib/api/types";
 import { DELIVERY } from "@/lib/delivery";
 import { formatINR } from "@/lib/format";
 
 export const revalidate = 60;
+
+const NO_REVIEWS: ReviewSummary = {
+  count: 0,
+  average: null,
+  distribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 },
+  fit: { ran_small: 0, true_to_size: 0, ran_large: 0 },
+  modesty_as_described: { yes: 0, no: 0 },
+};
 
 async function load(slug: string) {
   try {
@@ -54,10 +64,15 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
   const product = await load(slug);
-  const related = await api
-    .listProducts({ category: product.category.slug, page_size: 9 })
-    .then(({ results }) => results.filter((item) => item.id !== product.id).slice(0, 8))
-    .catch(() => []);
+  // Neither related pieces nor reviews may take the product page down with them.
+  const [related, reviews, summary] = await Promise.all([
+    api
+      .listProducts({ category: product.category.slug })
+      .then(({ results }) => results.filter((item) => item.id !== product.id).slice(0, 8))
+      .catch(() => []),
+    api.getReviews(product.id).then(({ results }) => results).catch(() => []),
+    api.getReviewSummary(product.id).catch(() => NO_REVIEWS),
+  ]);
 
   return (
     // Bottom padding on phones keeps content clear of the pinned buy bar.
@@ -127,6 +142,8 @@ export default async function ProductPage({
           </div>
         </div>
       </div>
+
+      <ProductReviews productId={product.id} productSlug={product.slug} summary={summary} reviews={reviews} />
 
       <ProductRail
         eyebrow="Complete the look"

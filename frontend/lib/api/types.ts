@@ -133,6 +133,41 @@ export interface Category {
   readonly description: string;
 }
 
+export type FitFeedback = "ran_small" | "true_to_size" | "ran_large";
+
+/** A published review, as /reviews/ lists it. Only a first name is ever published. */
+export interface Review {
+  readonly id: string;
+  readonly product: string;
+  readonly author_name: string;
+  readonly rating: number;
+  readonly title: string;
+  readonly body: string;
+  readonly fit_feedback: FitFeedback | "";
+  readonly modesty_as_described: boolean | null;
+  /** Set by the server from a delivered order; a client cannot claim it. */
+  readonly is_verified_purchase: boolean;
+  readonly created_at: string;
+}
+
+/** /reviews/summary/?product=: published reviews only. */
+export interface ReviewSummary {
+  readonly count: number;
+  readonly average: string | null;
+  readonly distribution: Readonly<Record<"1" | "2" | "3" | "4" | "5", number>>;
+  readonly fit: Readonly<Record<FitFeedback, number>>;
+  readonly modesty_as_described: { readonly yes: number; readonly no: number };
+}
+
+export interface NewReview {
+  readonly product: string;
+  readonly rating: number;
+  readonly title: string;
+  readonly body: string;
+  readonly fit_feedback: FitFeedback | "";
+  readonly modesty_as_described: boolean | null;
+}
+
 export interface Paginated<T> {
   readonly count: number;
   readonly next: string | null;
