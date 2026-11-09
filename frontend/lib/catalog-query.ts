@@ -36,9 +36,6 @@ export type SortValue = (typeof SORTS)[number]["value"];
 /** The API's own default (Product.Meta.ordering), so the URL can omit it. */
 const DEFAULT_SORT: SortValue = "-created";
 
-/** Garments per page: REST_FRAMEWORK["PAGE_SIZE"], which the API does not let a client change. */
-export const PAGE_SIZE = 24;
-
 export interface PricePreset {
   readonly id: string;
   readonly label: string;

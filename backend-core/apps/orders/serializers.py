@@ -81,14 +81,23 @@ def customer_name(order: Order) -> str:
 class OrderListSerializer(serializers.ModelSerializer):
     line_count = serializers.IntegerField(read_only=True, required=False)
     customer_name = serializers.SerializerMethodField()
+    item_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = (
             "id", "order_number", "status", "currency", "grand_total",
-            "line_count", "customer_name", "placed_at", "created_at",
+            "line_count", "item_summary", "customer_name", "placed_at", "created_at",
         )
         read_only_fields = fields
+
+    def get_item_summary(self, order: Order) -> str:
+        """What was bought: 'Velvet Gharara', or 'Velvet Gharara and 2 more' (prefetched lines)."""
+        lines = list(order.lines.all())
+        if not lines:
+            return ""
+        first = lines[0].product_name
+        return first if len(lines) == 1 else f"{first} and {len(lines) - 1} more"
 
     def get_customer_name(self, order: Order) -> str:
         # Tailors read atelier orders too; who the customer is stays with the back office.

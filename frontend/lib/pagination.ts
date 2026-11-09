@@ -1,4 +1,11 @@
-/** Page numbers for any paginated list (the collection, the dashboard's orders). */
+/** Paging for every list the API returns (the collection, orders, the dashboard). */
+
+/** REST_FRAMEWORK["PAGE_SIZE"]: the API does not let a client choose its page size. */
+export const PAGE_SIZE = 24;
+
+export function pageCount(count: number): number {
+  return Math.ceil(count / PAGE_SIZE);
+}
 
 export type PageItem = number | "gap";
 

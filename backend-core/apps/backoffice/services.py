@@ -91,6 +91,7 @@ def dashboard_summary(request) -> dict:
     recent = (
         Order.objects.filter(placed_at__isnull=False)
         .select_related("customer")
+        .prefetch_related("lines")
         .annotate(line_count=Count("lines", distinct=True))
         .order_by("-placed_at", "-pk")[:RECENT_ORDERS]
     )

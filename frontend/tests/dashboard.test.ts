@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { ADMIN_LINKS } from "@/lib/admin-links";
-import { attentionItems, change, formatDay, formatMoment, ordersHref } from "@/lib/dashboard";
+import { attentionItems, change, ordersHref } from "@/lib/dashboard";
+import { formatDay, formatMoment } from "@/lib/format";
 import { orderMoves, orderStatus, orderView } from "@/lib/order-status";
 
 import { BACK_OFFICE_ORDER, QUIET_SUMMARY, SUMMARY } from "./fixtures/back-office";

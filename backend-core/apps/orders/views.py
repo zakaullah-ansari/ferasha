@@ -20,6 +20,12 @@ from .state_machine import IllegalTransition, transition_order
 class OrderFilter(filters.FilterSet):
     #: Several stages at once: the dashboard's "To start" tab is more than one.
     status = filters.MultipleChoiceFilter(choices=OrderStatus.choices)
+    #: The caller's own orders. Staff also shop, and the back office otherwise
+    #: sees everyone's: an account page must ask for "mine" explicitly.
+    mine = filters.BooleanFilter(method="filter_mine")
+
+    def filter_mine(self, queryset, name, value):
+        return queryset.filter(customer=self.request.user) if value else queryset
 
     class Meta:
         model = Order

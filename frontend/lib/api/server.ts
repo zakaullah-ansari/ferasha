@@ -9,9 +9,12 @@
 
 import { cookies } from "next/headers";
 
+import { redirect } from "next/navigation";
+
 import { ACCESS_COOKIE, REFRESH_COOKIE, backendOrigin } from "@/lib/session";
 
 import { ApiError } from "./client";
+import type { SessionUser } from "./types";
 
 /** True when the visitor holds a session (it may still need a refresh). */
 export async function hasSession(): Promise<boolean> {
@@ -32,6 +35,24 @@ export async function getAuthed<T>(path: string): Promise<T> {
     throw new ApiError(response.status, path, `Request to ${path} failed with ${response.status}.`);
   }
   return (await response.json()) as T;
+}
+
+const signIn = (next: string) => `/account/sign-in?next=${encodeURIComponent(next)}`;
+
+/** The signed-in visitor, or a trip through sign-in that comes back to `next`. */
+export async function requireSession(next: string): Promise<SessionUser> {
+  if (!(await hasSession())) redirect(signIn(next));
+  return getSignedIn<SessionUser>("/api/v1/auth/me/", next);
+}
+
+/** A signed-in read. A session that ran out mid-visit goes back through sign-in; other errors are the caller's. */
+export async function getSignedIn<T>(path: string, next: string): Promise<T> {
+  try {
+    return await getAuthed<T>(path);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) redirect(signIn(next));
+    throw error;
+  }
 }
 
 /**

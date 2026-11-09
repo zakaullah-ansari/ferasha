@@ -46,6 +46,9 @@ export default async function OrderPage({
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 px-5 py-12">
+      <Link href="/account" className="text-sm text-muted-foreground hover:text-foreground">
+        ← Your orders
+      </Link>
       <header className="space-y-3 text-center">
         {justPlaced && <CheckCircle2 className="mx-auto size-10 text-primary" aria-hidden="true" />}
         <h1 className="font-display text-display-sm">

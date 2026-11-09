@@ -218,6 +218,7 @@ export interface SessionUser {
   readonly id: string;
   readonly email: string;
   readonly full_name: string;
+  readonly phone?: string;
   /** Staff or admin: may open the owner dashboard. Decided by the API, never here. */
   readonly is_back_office: boolean;
 }
@@ -263,6 +264,9 @@ export interface OrderSummary {
   readonly currency: string;
   readonly grand_total: string;
   readonly line_count: number;
+  /** "Velvet Gharara", or "Velvet Gharara and 2 more". */
+  readonly item_summary: string;
+  /** Back office only; empty for everyone else. */
   readonly customer_name: string;
   readonly placed_at: string | null;
   readonly created_at: string;

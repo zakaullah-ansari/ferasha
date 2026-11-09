@@ -1,24 +1,15 @@
 import { Search } from "lucide-react";
 import Link from "next/link";
 
+import { LinkPagination } from "@/components/LinkPagination";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { ADMIN_LINKS } from "@/lib/admin-links";
 import type { OrderSummary } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { ordersHref } from "@/lib/dashboard";
 import { ORDER_VIEWS, type OrderView } from "@/lib/order-status";
-import { pageWindow } from "@/lib/pagination";
 
 import { OrdersTable } from "./OrdersTable";
 import { PageHeading } from "./PageHeading";
@@ -92,35 +83,7 @@ export function OrdersListView({ view, q, page, pageCount, count, orders }: Orde
         </CardContent>
       </Card>
 
-      {pageCount > 1 && (
-        <Pagination>
-          <PaginationContent>
-            {page > 1 && (
-              <PaginationItem>
-                <PaginationPrevious href={ordersHref({ view: view.id, q, page: page - 1 })} />
-              </PaginationItem>
-            )}
-            {pageWindow(page, pageCount).map((item, index) =>
-              item === "gap" ? (
-                <PaginationItem key={`gap-${index}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={item}>
-                  <PaginationLink isActive={item === page} href={ordersHref({ view: view.id, q, page: item })}>
-                    {item}
-                  </PaginationLink>
-                </PaginationItem>
-              ),
-            )}
-            {page < pageCount && (
-              <PaginationItem>
-                <PaginationNext href={ordersHref({ view: view.id, q, page: page + 1 })} />
-              </PaginationItem>
-            )}
-          </PaginationContent>
-        </Pagination>
-      )}
+      <LinkPagination page={page} pageCount={pageCount} href={(target) => ordersHref({ view: view.id, q, page: target })} />
     </div>
   );
 }

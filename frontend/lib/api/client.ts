@@ -96,7 +96,7 @@ async function get<T>(path: string, options: RequestOptions = {}): Promise<T> {
 }
 
 interface SendOptions {
-  readonly method?: "GET" | "POST" | "DELETE";
+  readonly method?: "GET" | "POST" | "PATCH" | "DELETE";
   readonly body?: unknown;
   /** Sent as Idempotency-Key. Reuse the same key when retrying one attempt. */
   readonly idempotencyKey?: string;
@@ -195,6 +195,17 @@ export const api = {
     },
     signOut(): Promise<void> {
       return send("/api/session/logout", { method: "POST" }, true);
+    },
+    updateProfile(details: { full_name: string; phone: string }): Promise<SessionUser> {
+      return send("/api/v1/auth/me/", { method: "PATCH", body: details });
+    },
+    /** Revokes every session, this one included: the caller must sign in again. */
+    changePassword(details: {
+      current_password: string;
+      new_password: string;
+      new_password_confirm: string;
+    }): Promise<{ detail: string }> {
+      return send("/api/v1/auth/password/change/", { method: "POST", body: details });
     },
   },
 

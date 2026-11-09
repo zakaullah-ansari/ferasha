@@ -5,8 +5,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { DashboardSummary } from "@/lib/api/types";
-import { formatDay } from "@/lib/dashboard";
-import { formatINR, formatINRCompact } from "@/lib/format";
+import { formatDay, formatINR, formatINRCompact } from "@/lib/format";
 
 // Primary, not --chart-1: the line must hold its contrast against the card.
 const CONFIG = { revenue: { label: "Revenue", color: "var(--primary)" } } satisfies ChartConfig;

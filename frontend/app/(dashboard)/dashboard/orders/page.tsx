@@ -6,11 +6,9 @@ import type { OrderSummary, Paginated } from "@/lib/api/types";
 import { getBackOffice } from "@/lib/back-office";
 import { ordersHref } from "@/lib/dashboard";
 import { orderView } from "@/lib/order-status";
+import { pageCount } from "@/lib/pagination";
 
 export const metadata = { title: "Orders" };
-
-/** The API's page size (REST_FRAMEWORK["PAGE_SIZE"]). */
-const PAGE_SIZE = 24;
 
 type Params = Readonly<Record<string, string | string[] | undefined>>;
 
@@ -42,7 +40,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       view={view}
       q={q}
       page={page}
-      pageCount={Math.ceil(data.count / PAGE_SIZE)}
+      pageCount={pageCount(data.count)}
       count={data.count}
       orders={data.results}
     />

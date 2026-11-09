@@ -70,25 +70,6 @@ export function attentionItems(summary: DashboardSummary): AttentionItem[] {
   return items;
 }
 
-const DAY = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
-const MOMENT = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "Asia/Kolkata",
-});
-
-/** "2026-11-05" (a calendar date, no time) -> "5 Nov", the same in every time zone. */
-export function formatDay(isoDate: string): string {
-  return DAY.format(new Date(`${isoDate}T00:00:00Z`));
-}
-
-/** A timestamp as the atelier in Mumbai saw it: "5 Nov, 2:20 pm". */
-export function formatMoment(isoDateTime: string | null): string {
-  return isoDateTime ? MOMENT.format(new Date(isoDateTime)) : "—";
-}
-
 /** The orders list's URL: a view (tab), an optional search, a page. Defaults are left out. */
 export function ordersHref({ view, q, page = 1 }: { view: string; q?: string; page?: number }): string {
   const params = new URLSearchParams({ view });

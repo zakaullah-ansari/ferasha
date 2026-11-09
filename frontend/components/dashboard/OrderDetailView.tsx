@@ -6,8 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ADMIN_LINKS } from "@/lib/admin-links";
 import type { OrderDetail } from "@/lib/api/types";
-import { formatMoment } from "@/lib/dashboard";
-import { formatINR } from "@/lib/format";
+import { formatINR, formatMoment } from "@/lib/format";
 import { orderStatus } from "@/lib/order-status";
 
 import { DashboardCard } from "./DashboardCard";

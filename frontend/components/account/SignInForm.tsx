@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError, api } from "@/lib/api/client";
 
-export function SignInForm({ next }: { readonly next: string }) {
+export function SignInForm({ next, notice }: { readonly next: string; readonly notice?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,6 +41,11 @@ export function SignInForm({ next }: { readonly next: string }) {
       <CardHeader>
         <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
         <CardDescription>Sign in to check out and follow your orders.</CardDescription>
+        {notice && (
+          <p role="status" className="mt-2 rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary">
+            {notice}
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="grid gap-4">

@@ -26,6 +26,7 @@ export const RECENT_ORDERS: OrderSummary[] = [
   currency: "INR",
   grand_total: grand_total as string,
   line_count: line_count as number,
+  item_summary: line_count === 1 ? "Karachi Lawn Chikankari - Ivory" : `Velvet Gharara - Emerald and ${(line_count as number) - 1} more`,
   customer_name: customer_name as string,
   placed_at: `2026-11-${String(20 - index * 2).padStart(2, "0")}T08:50:00Z`,
   created_at: `2026-11-${String(20 - index * 2).padStart(2, "0")}T08:45:00Z`,

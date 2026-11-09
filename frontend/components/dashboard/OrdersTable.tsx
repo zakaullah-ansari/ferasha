@@ -2,8 +2,7 @@ import Link from "next/link";
 
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { OrderSummary } from "@/lib/api/types";
-import { formatMoment } from "@/lib/dashboard";
-import { formatINR } from "@/lib/format";
+import { formatINR, formatMoment } from "@/lib/format";
 
 import { OrderStatusBadge } from "./OrderStatusBadge";
 

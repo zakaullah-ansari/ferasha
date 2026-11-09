@@ -11,7 +11,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import type { Category, Facets, ProductSummary } from "@/lib/api/types";
-import { type CatalogQuery, collectionTitle, PAGE_SIZE } from "@/lib/catalog-query";
+import { type CatalogQuery, collectionTitle } from "@/lib/catalog-query";
+import { pageCount } from "@/lib/pagination";
 
 import { ActiveFilters, CatalogPagination, SortSelect } from "./CatalogControls";
 import { CatalogNavigation } from "./CatalogNavigation";
@@ -103,7 +104,7 @@ export function CollectionView({ query, facets, products, count, category }: Col
               )}
             </CatalogResults>
 
-            <CatalogPagination pageCount={Math.ceil(count / PAGE_SIZE)} className="mt-16" />
+            <CatalogPagination pageCount={pageCount(count)} className="mt-16" />
           </div>
         </div>
       </div>

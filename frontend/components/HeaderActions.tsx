@@ -75,9 +75,9 @@ export function HeaderActions() {
               Dashboard
             </Link>
           )}
-          <span className="hidden text-muted-foreground sm:inline">
+          <Link href="/account" className="hidden text-muted-foreground hover:text-foreground sm:inline">
             {user.full_name.split(" ")[0] || user.email}
-          </span>
+          </Link>
           <Button variant="ghost" size="sm" onClick={signOut}>
             Sign out
           </Button>

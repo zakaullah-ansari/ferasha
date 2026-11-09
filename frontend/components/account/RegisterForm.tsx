@@ -67,7 +67,7 @@ export function RegisterForm({ next }: { readonly next: string }) {
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="font-display text-2xl">Create your account</CardTitle>
-        <CardDescription>Save your addresses and follow your orders in one place.</CardDescription>
+        <CardDescription>Follow your orders, from the atelier to your door, in one place.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="grid gap-4">

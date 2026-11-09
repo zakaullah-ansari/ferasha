@@ -27,3 +27,22 @@ export function formatINRCompact(value: string | number): string {
   const amount = typeof value === "string" ? Number.parseFloat(value) : value;
   return Number.isFinite(amount) ? INR_COMPACT.format(amount) : "—";
 }
+
+const DAY = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+const MOMENT = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "Asia/Kolkata",
+});
+
+/** "2026-11-05" (a calendar date, no time) -> "5 Nov", the same in every time zone. */
+export function formatDay(isoDate: string): string {
+  return DAY.format(new Date(`${isoDate}T00:00:00Z`));
+}
+
+/** A timestamp as the atelier in Mumbai saw it: "5 Nov, 2:20 pm". */
+export function formatMoment(isoDateTime: string | null): string {
+  return isoDateTime ? MOMENT.format(new Date(isoDateTime)) : "—";
+}
