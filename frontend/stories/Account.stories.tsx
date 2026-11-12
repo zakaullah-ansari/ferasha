@@ -27,6 +27,21 @@ export const NoOrdersYet: Story = {
   render: () => <AccountView user={AYESHA} orders={[]} page={1} pageCount={0} />,
 };
 
+/** Email not yet confirmed: a quiet nudge with a one-tap resend. */
+export const EmailNotConfirmed: Story = {
+  beforeEach: () =>
+    mockFetch([
+      { method: "POST", path: "/api/v1/auth/email/verify/request/", body: { detail: "If that account exists, a link is on its way." } },
+    ]),
+  render: () => <AccountView user={{ ...AYESHA, email_verified: false }} orders={[]} page={1} pageCount={0} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Please confirm your email.")).toBeInTheDocument();
+    await userEvent.click(canvas.getByRole("button", { name: "Send a new link" }));
+    await expect(await canvas.findByText("Sent. Check your inbox.")).toBeInTheDocument();
+  },
+};
+
 export const SavesDetails: Story = {
   beforeEach: () => mockFetch([{ method: "PATCH", path: "/api/v1/auth/me/", body: { ...AYESHA, full_name: "Ayesha K. Khan" } }]),
   render: () => <AccountView user={AYESHA} orders={[]} page={1} pageCount={0} />,

@@ -14,6 +14,13 @@
 
 export const ACCESS_COOKIE = "ferasha_access";
 export const REFRESH_COOKIE = "ferasha_refresh";
+/**
+ * Present (itself a browser-session cookie) when the visitor un-ticked
+ * "Remember me": the token cookies are then written without an expiry, so
+ * closing the browser signs them out. Read on every refresh, so rotating
+ * tokens never turns a session-only sign-in into a 14-day one.
+ */
+export const SESSION_ONLY_COOKIE = "ferasha_session_only";
 
 /** Mirror SIMPLE_JWT in backend-core/config/settings.py. */
 export const ACCESS_MAX_AGE_SECONDS = 30 * 60;
@@ -109,9 +116,11 @@ export async function refreshTokens(refresh: string): Promise<TokenPair | null> 
 }
 
 /** Anything with Next's response-cookie API (NextResponse in either runtime). */
+type CookieOptions = Omit<ReturnType<typeof cookieOptions>, "maxAge"> & { maxAge?: number };
+
 interface CookieWriter {
   readonly cookies: {
-    set(name: string, value: string, options: ReturnType<typeof cookieOptions>): unknown;
+    set(name: string, value: string, options: CookieOptions): unknown;
     delete(name: string): unknown;
   };
 }
@@ -121,18 +130,32 @@ function remainingSeconds(jwt: string, fallback: number): number {
   return exp === null ? fallback : Math.max(0, Math.floor(exp - Date.now() / 1000));
 }
 
-export function writeSessionCookies(response: CookieWriter, pair: TokenPair): void {
-  response.cookies.set(ACCESS_COOKIE, pair.access, cookieOptions(ACCESS_MAX_AGE_SECONDS));
+/** Without `persistent`, the cookies last until the browser closes ("Remember me" un-ticked). */
+export function writeSessionCookies(
+  response: CookieWriter,
+  pair: TokenPair,
+  { persistent = true }: { persistent?: boolean } = {},
+): void {
+  const options = (maxAge: number): CookieOptions => {
+    const full: CookieOptions = cookieOptions(maxAge);
+    // No maxAge (and no expires) makes a browser-session cookie.
+    if (!persistent) delete full.maxAge;
+    return full;
+  };
+  response.cookies.set(ACCESS_COOKIE, pair.access, options(ACCESS_MAX_AGE_SECONDS));
   response.cookies.set(
     REFRESH_COOKIE,
     pair.refresh,
-    cookieOptions(remainingSeconds(pair.refresh, REFRESH_MAX_AGE_SECONDS)),
+    options(remainingSeconds(pair.refresh, REFRESH_MAX_AGE_SECONDS)),
   );
+  if (persistent) response.cookies.delete(SESSION_ONLY_COOKIE);
+  else response.cookies.set(SESSION_ONLY_COOKIE, "1", options(0));
 }
 
 export function clearSessionCookies(response: CookieWriter): void {
   response.cookies.delete(ACCESS_COOKIE);
   response.cookies.delete(REFRESH_COOKIE);
+  response.cookies.delete(SESSION_ONLY_COOKIE);
 }
 
 /**

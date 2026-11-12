@@ -20,6 +20,16 @@ x-django-env: &django-env
   RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
   RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
   RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+  GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+  GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+  # Mail: unset, development prints emails to this service's log instead of sending.
+  EMAIL_BACKEND: ${EMAIL_BACKEND:-}
+  EMAIL_HOST: ${EMAIL_HOST:-localhost}
+  EMAIL_PORT: ${EMAIL_PORT:-587}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-1}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Ferasha <no-reply@ferasha.com>}
 
 services:
   postgres:
@@ -77,9 +87,11 @@ services:
       retries: 10
       start_period: 40s
 
-  # Housekeeping on a timer: releases the stock of orders left unpaid
-  # (orders.services.expire_unpaid_orders). In production, a cron job or
-  # systemd timer running the same command replaces this service.
+  # Housekeeping on a timer: every 5 minutes releases the stock of orders
+  # left unpaid (orders.services.expire_unpaid_orders); once a day (every
+  # 288th pass, and at start) deletes expired sign-in tokens, which rotation
+  # would otherwise pile up forever (flushexpiredtokens). In production, cron
+  # jobs or systemd timers running the same commands replace this service.
   scheduler:
     build:
       context: ./backend-core
@@ -92,7 +104,10 @@ services:
       backend-core:
         condition: service_healthy
     command: >
-      sh -c "while true; do python manage.py expire_unpaid_orders; sleep 300; done"
+      sh -c "i=0; while true; do
+        python manage.py expire_unpaid_orders;
+        if [ $$((i % 288)) -eq 0 ]; then python manage.py flushexpiredtokens; fi;
+        i=$$((i + 1)); sleep 300; done"
 
   ai-engine:
     build:

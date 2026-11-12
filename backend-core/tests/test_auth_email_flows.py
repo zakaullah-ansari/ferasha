@@ -30,16 +30,6 @@ PASSWORD = "Correct-Horse-Battery-7"
 NEW_PASSWORD = "Th3-Atelier-Stitches!"
 
 
-@pytest.fixture(autouse=True)
-def _clear_throttles():
-    """Throttle state is process-global; a leak makes later tests 429."""
-    from django.core.cache import cache
-
-    cache.clear()
-    yield
-    cache.clear()
-
-
 @pytest.fixture
 def client() -> APIClient:
     return APIClient()

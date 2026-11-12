@@ -179,7 +179,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
     """Public self-service registration. Always creates a CUSTOMER."""
 
     password = serializers.CharField(write_only=True, style={"input_type": "password"}, min_length=10)
-    password_confirm = serializers.CharField(write_only=True, style={"input_type": "password"})
+    # Optional: the storefront lets people see what they typed instead of
+    # asking twice. When sent, it must still match.
+    password_confirm = serializers.CharField(
+        write_only=True, required=False, style={"input_type": "password"}
+    )
     accept_terms = serializers.BooleanField(write_only=True)
 
     class Meta:
@@ -200,7 +204,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
-        if attrs["password"] != attrs.pop("password_confirm"):
+        confirm = attrs.pop("password_confirm", None)
+        if confirm is not None and attrs["password"] != confirm:
             raise serializers.ValidationError({"password_confirm": _("Passwords do not match.")})
 
         candidate = User(email=attrs["email"], full_name=attrs.get("full_name", ""))
@@ -220,6 +225,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
             accepted_terms_at=timezone.now(),
             **validated_data,
         )
+
+
+class SocialCallbackSerializer(serializers.Serializer):
+    """What the storefront relays from a provider's redirect back."""
+
+    code = serializers.CharField(max_length=2048)
+    code_verifier = serializers.CharField(min_length=43, max_length=128)
+    nonce = serializers.CharField(max_length=128)
 
 
 class PasswordChangeSerializer(serializers.Serializer):
@@ -262,21 +275,27 @@ class PasswordChangeSerializer(serializers.Serializer):
 def revoke_all_refresh_tokens(user) -> int:
     """Blacklist every outstanding refresh token for ``user``.
 
-    Called after any credential change. Access tokens already issued remain
-    valid until they expire (they are stateless by design), which is why the
-    access lifetime is kept short; refresh is the durable credential and it is
-    what an attacker would rely on for persistence.
+    Called after any credential change. Access tokens die with the password
+    on their own (SIMPLE_JWT CHECK_REVOKE_TOKEN); refresh is the durable
+    credential an attacker would rely on, so it is revoked explicitly.
+
+    Two queries whatever the number of sessions: the live, not-yet-revoked
+    token ids, then one bulk insert. Returns how many were newly revoked.
     """
     from rest_framework_simplejwt.token_blacklist.models import (
         BlacklistedToken,
         OutstandingToken,
     )
 
-    revoked = 0
-    for token in OutstandingToken.objects.filter(user=user):
-        _, created = BlacklistedToken.objects.get_or_create(token=token)
-        revoked += int(created)
-    return revoked
+    live = list(
+        OutstandingToken.objects.filter(
+            user=user, expires_at__gt=timezone.now(), blacklistedtoken__isnull=True
+        ).values_list("id", flat=True)
+    )
+    BlacklistedToken.objects.bulk_create(
+        [BlacklistedToken(token_id=token_id) for token_id in live], ignore_conflicts=True
+    )
+    return len(live)
 
 
 class EmailVerificationRequestSerializer(serializers.Serializer):

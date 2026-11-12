@@ -4,14 +4,12 @@ import { useRef } from "react"
 import {
   AnimatePresence,
   motion,
-  useInView,
   useReducedMotion,
   type MotionProps,
-  type UseInViewOptions,
   type Variants,
 } from "motion/react"
 
-type MarginType = UseInViewOptions["margin"]
+import { useSeen } from "@/hooks/use-seen"
 
 /** Ferasha's --ease-luxury (globals.css): calm, decelerating, never bouncy. */
 const EASE_LUXURY = [0.22, 1, 0.36, 1] as const
@@ -28,7 +26,8 @@ interface BlurFadeProps extends MotionProps {
   offset?: number
   direction?: "up" | "down" | "left" | "right"
   inView?: boolean
-  inViewMargin?: MarginType
+  /** How far above the bottom of the screen the reveal starts, e.g. "-50px". */
+  inViewMargin?: `${number}px` | `${number}%`
   blur?: string
 }
 
@@ -48,9 +47,11 @@ export function BlurFade({
   blur = "6px",
   ...props
 }: BlurFadeProps) {
-  const ref = useRef(null)
-  const inViewResult = useInView(ref, { once: true, margin: inViewMargin })
-  const isInView = !inView || inViewResult
+  const ref = useRef<HTMLDivElement>(null)
+  // useSeen, not motion's useInView: an element scrolled past in one frame
+  // must still reveal (see the hook).
+  const seen = useSeen(ref, { enabled: inView, bottomOffset: inViewMargin })
+  const isInView = !inView || seen
   // The global prefers-reduced-motion CSS rule cannot reach JS animation:
   // show the content in place instead.
   const reduceMotion = useReducedMotion()

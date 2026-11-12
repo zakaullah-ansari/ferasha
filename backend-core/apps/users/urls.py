@@ -17,6 +17,9 @@ from .views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RegistrationView,
+    SocialAuthorizeView,
+    SocialCallbackView,
+    SocialProvidersView,
 )
 
 router = DefaultRouter()
@@ -30,6 +33,13 @@ urlpatterns = [
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("auth/token/verify/", TokenVerifyView.as_view(), name="token-verify"),
     path("auth/logout/", LogoutView.as_view(), name="logout"),
+    path("auth/social/providers/", SocialProvidersView.as_view(), name="social-providers"),
+    path(
+        "auth/social/<slug:provider>/authorize/",
+        SocialAuthorizeView.as_view(),
+        name="social-authorize",
+    ),
+    path("auth/social/<slug:provider>/", SocialCallbackView.as_view(), name="social-callback"),
     path("auth/me/", CurrentUserView.as_view(), name="current-user"),
     path("auth/password/change/", PasswordChangeView.as_view(), name="password-change"),
     path(

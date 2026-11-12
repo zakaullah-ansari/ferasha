@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db import transaction
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
@@ -11,6 +16,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers as drf_serializers
 from rest_framework import status, viewsets
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -36,8 +42,10 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegistrationSerializer,
+    SocialCallbackSerializer,
     UserSerializer,
 )
+from .social import SocialAuthError, configured_provider, configured_providers, sign_in
 
 User = get_user_model()
 
@@ -61,12 +69,47 @@ class CredentialEmailThrottle(AnonRateThrottle):
     rate = "5/hour"
 
 
+def _login_failure_key(email: object) -> str:
+    # Hashed so the cache never holds email addresses.
+    normalised = str(email or "").strip().lower()
+    return "login-fail:" + hashlib.sha256(normalised.encode()).hexdigest()
+
+
 class FerashaTokenObtainPairView(TokenObtainPairView):
-    """POST /api/v1/auth/token/ - exchange credentials for a JWT pair."""
+    """POST /api/v1/auth/token/ - exchange credentials for a JWT pair.
+
+    Two limits: per IP (``LoginRateThrottle``) and per account. The second
+    stops guessing spread across many IPs; it counts unknown emails exactly
+    like real ones, so it reveals nothing about who has an account.
+    """
 
     serializer_class = FerashaTokenObtainPairSerializer
     permission_classes = (AllowAny,)
     throttle_classes = (LoginRateThrottle,)
+
+    def post(self, request, *args, **kwargs):
+        key = _login_failure_key(request.data.get("email"))
+        if cache.get(key, 0) >= settings.LOGIN_FAILURE_LIMIT:
+            return Response(
+                {
+                    "detail": _(
+                        "Too many wrong passwords for this account. Please wait 15 minutes, "
+                        "or reset your password."
+                    )
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        try:
+            response = super().post(request, *args, **kwargs)
+        except AuthenticationFailed:
+            # Wrong password or unknown email (simplejwt raises, DRF renders the 401).
+            try:
+                cache.incr(key)
+            except ValueError:
+                cache.set(key, 1, timeout=settings.LOGIN_FAILURE_WINDOW_SECONDS)
+            raise
+        cache.delete(key)
+        return response
 
 
 class RegistrationView(CreateAPIView):
@@ -90,6 +133,125 @@ class RegistrationView(CreateAPIView):
                 "access": str(refresh.access_token),
             },
             status=status.HTTP_201_CREATED,
+        )
+
+
+class SocialProvidersView(APIView):
+    """GET /api/v1/auth/social/providers/ - the outside sign-ins switched on here."""
+
+    permission_classes = (AllowAny,)
+    serializer_class = None
+
+    @extend_schema(
+        summary="Social sign-in providers",
+        description="Only providers with keys configured are listed; the storefront shows a button per entry.",
+        responses=inline_serializer(
+            name="SocialProviders",
+            fields={
+                "providers": drf_serializers.ListField(
+                    child=inline_serializer(
+                        name="SocialProvider",
+                        fields={"id": drf_serializers.CharField(), "name": drf_serializers.CharField()},
+                    )
+                )
+            },
+        ),
+        tags=["auth"],
+    )
+    def get(self, request):
+        return Response(
+            {"providers": [{"id": p.id, "name": p.name} for p in configured_providers()]}
+        )
+
+
+class SocialAuthorizeView(APIView):
+    """POST /api/v1/auth/social/<provider>/authorize/ - start a provider sign-in.
+
+    Returns the provider URL plus the state, PKCE verifier and nonce the
+    storefront keeps (httpOnly cookie) until the browser returns.
+    """
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (LoginRateThrottle,)
+    serializer_class = None
+
+    @extend_schema(
+        summary="Start a social sign-in",
+        request=None,
+        responses={
+            200: inline_serializer(
+                name="SocialAuthorization",
+                fields={
+                    "authorization_url": drf_serializers.URLField(),
+                    "state": drf_serializers.CharField(),
+                    "code_verifier": drf_serializers.CharField(),
+                    "nonce": drf_serializers.CharField(),
+                },
+            ),
+            404: OpenApiResponse(description="Unknown or unconfigured provider."),
+        },
+        tags=["auth"],
+    )
+    def post(self, request, provider: str):
+        oauth = configured_provider(provider)
+        if oauth is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        started = oauth.authorize()
+        return Response(
+            {
+                "authorization_url": started.authorization_url,
+                "state": started.state,
+                "code_verifier": started.code_verifier,
+                "nonce": started.nonce,
+            }
+        )
+
+
+class SocialCallbackView(APIView):
+    """POST /api/v1/auth/social/<provider>/ - finish a provider sign-in, issue JWTs."""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (LoginRateThrottle,)
+    serializer_class = SocialCallbackSerializer
+
+    @extend_schema(
+        summary="Finish a social sign-in",
+        request=SocialCallbackSerializer,
+        responses={
+            200: inline_serializer(
+                name="SocialSession",
+                fields={
+                    "user": UserSerializer(),
+                    "access": drf_serializers.CharField(),
+                    "refresh": drf_serializers.CharField(),
+                    "created": drf_serializers.BooleanField(),
+                },
+            ),
+            400: OpenApiResponse(description="The provider's answer could not be verified."),
+            403: OpenApiResponse(description="Deactivated or back-office account."),
+            409: OpenApiResponse(description="Email belongs to an account this provider cannot vouch for."),
+        },
+        tags=["auth"],
+    )
+    def post(self, request, provider: str):
+        oauth = configured_provider(provider)
+        if oauth is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SocialCallbackSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            identity = oauth.exchange(**serializer.validated_data)
+            user, created = sign_in(identity)
+        except SocialAuthError as exc:
+            return Response({"detail": str(exc)}, status=exc.status)
+        refresh = FerashaTokenObtainPairSerializer.get_token(user)
+        return Response(
+            {
+                "user": UserSerializer(user, context={"request": request, "view": self}).data,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "created": created,
+            }
         )
 
 

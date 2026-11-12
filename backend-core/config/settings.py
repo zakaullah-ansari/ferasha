@@ -156,7 +156,14 @@ AUTH_PASSWORD_VALIDATORS = [
      "OPTIONS": {"min_length": 10}},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "apps.users.validators.PwnedPasswordValidator"},
 ]
+# Breached-password lookup (k-anonymity; fails open). Off only for air-gapped setups.
+PWNED_PASSWORDS_CHECK = env_bool("PWNED_PASSWORDS_CHECK", True)
+# Per-account lockout: this many wrong passwords for one email within the
+# window locks sign-in for that email (any IP) until the window passes.
+LOGIN_FAILURE_LIMIT = int(env("LOGIN_FAILURE_LIMIT", "5"))
+LOGIN_FAILURE_WINDOW_SECONDS = int(env("LOGIN_FAILURE_WINDOW_SECONDS", "900"))
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -237,6 +244,9 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
     "TOKEN_OBTAIN_SERIALIZER": "apps.users.serializers.FerashaTokenObtainPairSerializer",
+    # Every token carries a fingerprint of the password hash, so a password
+    # change or reset kills access tokens already issued, not just refreshes.
+    "CHECK_REVOKE_TOKEN": True,
 }
 
 # --------------------------------------------------------------------------- #
@@ -246,11 +256,11 @@ SIMPLE_JWT = {
 # Production must set EMAIL_HOST and friends; the deploy check in Phase 7 fails
 # the build if EMAIL_BACKEND is still the console backend when DEBUG is False.
 # --------------------------------------------------------------------------- #
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND",
+# `or`, not a get() default: compose passes an unset variable as "".
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND") or (
     "django.core.mail.backends.console.EmailBackend"
     if DEBUG
-    else "django.core.mail.backends.smtp.EmailBackend",
+    else "django.core.mail.backends.smtp.EmailBackend"
 )
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
@@ -264,6 +274,10 @@ SERVER_EMAIL = os.environ.get("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 # Links in transactional email point at the storefront, not the API.
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
 EMAIL_VERIFICATION_PATH = os.environ.get("EMAIL_VERIFICATION_PATH", "/account/verify-email")
+# Sign in with Google. Both empty (the default) hides the button entirely.
+# Authorised redirect URI in Google Cloud: FRONTEND_BASE_URL + /api/session/oauth/google/callback
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "")
 PASSWORD_RESET_PATH = os.environ.get("PASSWORD_RESET_PATH", "/account/reset-password")
 
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:3000")

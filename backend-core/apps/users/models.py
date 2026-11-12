@@ -215,3 +215,28 @@ class Address(models.Model):
         self.state_code = self.state_code.upper().strip()
         self.gstin = self.gstin.upper().strip()
         return super().save(*args, **kwargs)
+
+
+class SocialAccount(models.Model):
+    """A sign-in identity at an outside provider (Google today) linked to a user.
+
+    Keyed on the provider's stable subject id, never the email: an email can
+    change at the provider, the subject cannot.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="social_accounts")
+    provider = models.CharField(max_length=32)
+    subject = models.CharField(max_length=255)
+    #: The address the provider reported when linked; informational only.
+    email = models.EmailField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["provider", "subject"], name="unique_social_subject"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.provider}:{self.user_id}"

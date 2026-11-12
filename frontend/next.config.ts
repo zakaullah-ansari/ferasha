@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { securityHeaders } from "./lib/security-headers";
+
 /**
  * The sandbox preview proxies this app under https://{port}-{id}.e2b.app, so
  * the dev server has to accept that Origin for server actions and HMR.
@@ -24,6 +26,11 @@ const nextConfig: NextConfig = {
   },
 
   allowedDevOrigins: previewOrigins,
+
+  // Security headers on every page (see lib/security-headers.ts).
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders({ production: process.env.NODE_ENV === "production" }) }];
+  },
 
   images: {
     formats: ["image/avif", "image/webp"],

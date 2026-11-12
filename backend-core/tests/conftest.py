@@ -10,6 +10,24 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
+@pytest.fixture(autouse=True)
+def _clear_throttles():
+    """Throttle state is process-global; a leak makes later tests 429."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def _no_breach_lookups(monkeypatch):
+    """The suite never calls Have I Been Pwned; every password is "not breached"."""
+    from apps.users.validators import PwnedPasswordValidator
+
+    monkeypatch.setattr(PwnedPasswordValidator, "_range", lambda self, prefix: "")
+
+
 @pytest.fixture
 def api_client():
     from rest_framework.test import APIClient

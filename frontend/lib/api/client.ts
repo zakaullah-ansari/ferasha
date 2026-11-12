@@ -203,7 +203,7 @@ export const api = {
         throw error;
       }
     },
-    signIn(credentials: { email: string; password: string }): Promise<{ user: SessionUser }> {
+    signIn(credentials: { email: string; password: string; remember?: boolean }): Promise<{ user: SessionUser }> {
       return send("/api/session/login", { method: "POST", body: credentials }, true);
     },
     register(details: Registration): Promise<{ user: SessionUser }> {
@@ -222,6 +222,10 @@ export const api = {
     },
     resetPassword(details: { token: string; new_password: string; new_password_confirm: string }): Promise<{ detail: string }> {
       return send("/api/v1/auth/password/reset/confirm/", { method: "POST", body: details });
+    },
+    /** Always "accepted": the answer never reveals whether an account exists. */
+    requestEmailVerification(email: string): Promise<{ detail: string }> {
+      return send("/api/v1/auth/email/verify/request/", { method: "POST", body: { email } });
     },
     confirmEmail(token: string): Promise<{ detail: string }> {
       return send("/api/v1/auth/email/verify/confirm/", { method: "POST", body: { token } });

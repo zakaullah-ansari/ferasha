@@ -14,7 +14,7 @@ import { redirect } from "next/navigation";
 import { ACCESS_COOKIE, REFRESH_COOKIE, backendOrigin } from "@/lib/session";
 
 import { ApiError } from "./client";
-import type { SessionUser } from "./types";
+import type { SessionUser, SocialProvider } from "./types";
 
 /** True when the visitor holds a session (it may still need a refresh). */
 export async function hasSession(): Promise<boolean> {
@@ -35,6 +35,24 @@ export async function getAuthed<T>(path: string): Promise<T> {
     throw new ApiError(response.status, path, `Request to ${path} failed with ${response.status}.`);
   }
   return (await response.json()) as T;
+}
+
+/**
+ * Outside sign-ins Django has keys for; [] when none are, or Django is away
+ * (the email form still works). Cached briefly: it changes only on deploy.
+ */
+export async function getSocialProviders(): Promise<readonly SocialProvider[]> {
+  try {
+    const response = await fetch(`${backendOrigin()}/api/v1/auth/social/providers/`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 300 },
+    });
+    if (!response.ok) return [];
+    const data = (await response.json()) as { providers?: SocialProvider[] };
+    return Array.isArray(data.providers) ? data.providers : [];
+  } catch {
+    return [];
+  }
 }
 
 const signIn = (next: string) => `/account/sign-in?next=${encodeURIComponent(next)}`;

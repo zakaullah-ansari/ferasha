@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
-from .models import Address, User
+from .models import Address, SocialAccount, User
 
 # Re-register auth's Group on unfold's base so staff groups match the rest.
 admin.site.unregister(Group)
@@ -28,6 +28,18 @@ class AddressInline(TabularInline):
     show_change_link = True
 
 
+class SocialAccountInline(TabularInline):
+    """Linked outside sign-ins (Google). Deleting a row unlinks it."""
+
+    model = SocialAccount
+    extra = 0
+    fields = ("provider", "email", "created_at", "last_used_at")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None) -> bool:
+        return False
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin, ModelAdmin):
     form = UserChangeForm
@@ -38,7 +50,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     list_filter = ("role", "is_active", "is_staff", "is_superuser", "created_at")
     search_fields = ("email", "full_name", "phone")
     readonly_fields = ("id", "created_at", "updated_at", "last_login", "date_joined")
-    inlines = (AddressInline,)
+    inlines = (AddressInline, SocialAccountInline)
 
     fieldsets = (
         (None, {"fields": ("id", "email", "password")}),

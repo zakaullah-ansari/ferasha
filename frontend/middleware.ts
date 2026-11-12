@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
+  SESSION_ONLY_COOKIE,
   clearSessionCookies,
   isExpiring,
   isSafeMethod,
@@ -68,7 +69,9 @@ export async function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next({ request: { headers } });
-  if (rotated) writeSessionCookies(response, rotated);
+  if (rotated) {
+    writeSessionCookies(response, rotated, { persistent: !request.cookies.get(SESSION_ONLY_COOKIE) });
+  }
   else if (refreshExpired) clearSessionCookies(response);
   return response;
 }

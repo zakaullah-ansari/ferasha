@@ -267,6 +267,8 @@ export interface SessionUser {
   readonly phone?: string;
   /** Staff or admin: may open the owner dashboard. Decided by the API, never here. */
   readonly is_back_office: boolean;
+  /** False until the link in the welcome email is opened (Google sign-ins arrive verified). */
+  readonly email_verified?: boolean;
 }
 
 /** Mirrors backend-core users.RegistrationSerializer. */
@@ -275,8 +277,15 @@ export interface Registration {
   readonly email: string;
   readonly phone?: string;
   readonly password: string;
-  readonly password_confirm: string;
+  /** Optional: the form shows the password instead of asking twice. */
+  readonly password_confirm?: string;
   readonly accept_terms: boolean;
+}
+
+/** An outside sign-in switched on in Django (GET /auth/social/providers/). */
+export interface SocialProvider {
+  readonly id: string;
+  readonly name: string;
 }
 
 /* --------------------------------------------------------------- orders */

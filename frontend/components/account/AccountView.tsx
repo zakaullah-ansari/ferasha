@@ -9,6 +9,7 @@ import type { OrderSummary, SessionUser } from "@/lib/api/types";
 import { OrderHistory } from "./OrderHistory";
 import { PasswordForm } from "./PasswordForm";
 import { ProfileForm } from "./ProfileForm";
+import { VerifyEmailNudge } from "./VerifyEmailNudge";
 
 interface AccountViewProps {
   readonly user: SessionUser;
@@ -46,6 +47,12 @@ export function AccountView({ user, orders, page, pageCount }: AccountViewProps)
           </Link>
         )}
       </div>
+
+      {user.email_verified === false && (
+        <div className="mt-6">
+          <VerifyEmailNudge email={user.email} />
+        </div>
+      )}
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Section title="Your orders" description="Follow each one from the atelier to your door">

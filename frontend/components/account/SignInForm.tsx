@@ -6,23 +6,45 @@ import { type FormEvent, useState } from "react";
 
 import { FormField } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { useValidatedForm } from "@/hooks/use-validated-form";
 import { ApiError, api } from "@/lib/api/client";
+import type { SocialProvider } from "@/lib/api/types";
+import { signInSchema } from "@/lib/auth-validation";
 
-import { AuthCard } from "./AuthCard";
+import { AuthCard, type AuthNotice } from "./AuthCard";
+import { EmailField } from "./EmailField";
+import { SocialSignIn } from "./SocialSignIn";
 
-export function SignInForm({ next, notice }: { readonly next: string; readonly notice?: string }) {
+const IDS = { email: "sign-in-email", password: "sign-in-password" } as const;
+
+export function SignInForm({
+  next,
+  notice,
+  providers = [],
+}: {
+  readonly next: string;
+  readonly notice?: AuthNotice;
+  readonly providers?: readonly SocialProvider[];
+}) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const form = useValidatedForm(signInSchema, { email: "", password: "" });
+  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setBusy(true);
     setError(null);
+    const invalid = form.validateAll();
+    if (invalid) {
+      document.getElementById(IDS[invalid as keyof typeof IDS])?.focus();
+      return;
+    }
+    setBusy(true);
     try {
-      await api.session.signIn({ email, password });
+      await api.session.signIn({ email: form.values.email.trim(), password: form.values.password, remember });
       router.replace(next);
       router.refresh();
     } catch (caught) {
@@ -45,43 +67,61 @@ export function SignInForm({ next, notice }: { readonly next: string; readonly n
       footer={
         <>
           New to Ferasha?&nbsp;
-          <Link href={registerHref} className="text-foreground underline underline-offset-4">
+          <Link href={registerHref} className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
             Create an account
           </Link>
         </>
       }
     >
-      <form onSubmit={submit} className="grid gap-4">
-        <FormField
-          id="sign-in-email"
-          label="Email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-        <FormField
-          id="sign-in-password"
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        <Button type="submit" size="lg" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
-        </Button>
-        <Link href="/account/forgot-password" className="justify-self-center text-sm text-muted-foreground underline-offset-4 hover:underline">
-          Forgot your password?
-        </Link>
-      </form>
+      <div className="grid gap-5">
+        <SocialSignIn providers={providers} next={next} />
+        <form onSubmit={submit} noValidate className="grid gap-4">
+          <EmailField
+            id={IDS.email}
+            value={form.values.email}
+            error={form.errors.email}
+            onValue={(value) => form.set("email", value)}
+            onBlur={() => form.touch("email")}
+          />
+          <FormField
+            id={IDS.password}
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={form.values.password}
+            error={form.errors.password}
+            onChange={(event) => form.set("password", event.target.value)}
+            onBlur={() => form.touch("password")}
+            labelAction={
+              <Link
+                href="/account/forgot-password"
+                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            }
+          />
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="sign-in-remember"
+              checked={remember}
+              onCheckedChange={(checked) => setRemember(checked === true)}
+            />
+            <Label htmlFor="sign-in-remember" className="font-normal text-muted-foreground">
+              Keep me signed in on this device
+            </Label>
+          </div>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <Button type="submit" size="lg" disabled={busy}>
+            {busy ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+      </div>
     </AuthCard>
   );
 }

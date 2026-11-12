@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
+import { expect, waitFor, within } from "storybook/test";
 
 import { ProductCard } from "@/components/ProductCard";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,32 @@ export const GridReveal: Story = {
       </Grid>
     </div>
   ),
+};
+
+/**
+ * **Jumped past, still shown.** A fast fling, an anchor link or the back
+ * button can carry a short heading from below the screen to above it in a
+ * single frame. It must still reveal: content is never left invisible
+ * because the visitor scrolled quickly.
+ */
+export const RevealAfterFastScroll: Story = {
+  render: () => (
+    <div>
+      <div className="h-[300vh]" aria-hidden />
+      <BlurFade inView>
+        <h2 className="font-display text-display-sm">New this season</h2>
+      </BlurFade>
+      <div className="h-[300vh]" aria-hidden />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const heading = within(canvasElement).getByRole("heading", { name: "New this season" });
+    const reveal = heading.parentElement as HTMLElement;
+    // Let the observer see the heading below the screen first, as on a real page.
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" });
+    await waitFor(() => expect(getComputedStyle(reveal).opacity).toBe("1"), { timeout: 3000 });
+  },
 };
 
 /**

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ResetPasswordForm } from "@/components/account/ResetPasswordForm";
+import { AuthPage } from "@/components/account/AuthCard";
 
 // The token is a credential: keep the page out of search and its URL out of referrers.
 export const metadata: Metadata = { title: "Choose a new password", robots: { index: false }, referrer: "no-referrer" };
@@ -8,8 +9,8 @@ export const metadata: Metadata = { title: "Choose a new password", robots: { in
 export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string | string[] }> }) {
   const { token } = await searchParams;
   return (
-    <div className="mx-auto flex max-w-6xl justify-center px-5 py-16">
+    <AuthPage>
       <ResetPasswordForm token={(Array.isArray(token) ? token[0] : token) ?? ""} />
-    </div>
+    </AuthPage>
   );
 }
