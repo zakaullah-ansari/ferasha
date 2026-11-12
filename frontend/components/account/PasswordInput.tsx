@@ -70,7 +70,7 @@ export function PasswordInput({
       </InputGroupAddon>
     </InputGroup>
     {capsLock && (
-      <p role="status" className="inline-flex items-center gap-1 text-xs text-gold-800">
+      <p role="status" className="inline-flex items-center gap-1 text-xs text-gold-800 dark:text-gold-300">
         <ArrowBigUpDash aria-hidden className="size-3.5" />
         Caps Lock is on
       </p>

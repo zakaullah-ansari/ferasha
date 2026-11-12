@@ -25,7 +25,7 @@ export function VerifyEmailNudge({ email }: { readonly email: string }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl bg-gold-100 px-4 py-3 text-sm text-gold-900">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl bg-gold-100 px-4 py-3 text-sm text-gold-900 dark:bg-gold-900/40 dark:text-gold-100">
       <MailCheck aria-hidden className="size-5 shrink-0" />
       <p className="min-w-0 flex-1">
         <span className="font-medium">Please confirm your email.</span> We sent a link to {email}, so order and

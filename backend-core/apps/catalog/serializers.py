@@ -117,8 +117,10 @@ class ProductListSerializer(serializers.ModelSerializer):
             "id", "slug", "name", "category_slug", "garment_type", "fabric",
             "work_type", "occasion", "base_price", "from_price", "compare_at_price",
             "supports_bespoke", "stitching_days", "modesty", "primary_image", "secondary_image",
-            "status",
+            "status", "created_at",
         )
+        # created_at drives the card's "New" label (frontend lib/merchandising.ts).
+        read_only_fields = ("created_at",)
 
     @extend_schema_field(ModestySerializer)
     def get_modesty(self, obj) -> dict[str, Any]:

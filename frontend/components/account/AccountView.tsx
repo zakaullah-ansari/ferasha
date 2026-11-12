@@ -10,6 +10,7 @@ import { OrderHistory } from "./OrderHistory";
 import { PasswordForm } from "./PasswordForm";
 import { ProfileForm } from "./ProfileForm";
 import { VerifyEmailNudge } from "./VerifyEmailNudge";
+import { YourDataSection } from "./YourDataSection";
 
 interface AccountViewProps {
   readonly user: SessionUser;
@@ -67,6 +68,9 @@ export function AccountView({ user, orders, page, pageCount }: AccountViewProps)
           </Section>
           <Section title="Password">
             <PasswordForm />
+          </Section>
+          <Section title="Your data">
+            <YourDataSection />
           </Section>
         </div>
       </div>

@@ -13,6 +13,8 @@ The model is deliberately **fail-closed**:
   by a crashed worker is never publishable;
 * zero detected faces routes to NEEDS_REVIEW, not to APPROVED - MediaPipe
   reliably misses veiled and profile faces, which are common in this catalogue.
+  From there only a person may approve (``reviewed_at`` set), and the public
+  copy is written by Django at that moment, never by the worker beforehand.
 """
 
 from __future__ import annotations
@@ -121,15 +123,18 @@ class MediaAsset(BaseModel):
                 name="asset_status_valid",
             ),
             # The core privacy invariant, enforced by the database: an asset
-            # cannot be APPROVED without a derivative and a verified blur.
+            # cannot be APPROVED without a derivative, and without either a
+            # verified blur or a person's recorded sign-off. reviewed_at (not
+            # reviewed_by) carries it: deleting the reviewer's account nulls
+            # the FK, and must not make a settled row violate the check.
             models.CheckConstraint(
                 condition=~models.Q(moderation_status=ModerationStatus.APPROVED)
                 | (
-                    models.Q(blur_verified=True)
+                    (models.Q(blur_verified=True) | models.Q(reviewed_at__isnull=False))
                     & models.Q(derivative__isnull=False)
                     & ~models.Q(derivative="")
                 ),
-                name="asset_approved_requires_verified_derivative",
+                name="asset_approved_requires_checked_derivative",
             ),
             models.CheckConstraint(
                 condition=models.Q(byte_size__gt=0), name="asset_byte_size_positive"
@@ -146,11 +151,12 @@ class MediaAsset(BaseModel):
                 raise ValidationError(
                     {"derivative": _("An approved asset must have a processed derivative.")}
                 )
-            if not self.blur_verified:
+            if not (self.blur_verified or self.reviewed_at):
                 raise ValidationError(
                     {
                         "blur_verified": _(
-                            "An approved asset must have passed blur verification."
+                            "An approved asset must have passed blur verification "
+                            "or a recorded human review."
                         )
                     }
                 )
@@ -160,7 +166,7 @@ class MediaAsset(BaseModel):
         return (
             self.moderation_status in PUBLISHABLE_STATUSES
             and bool(self.derivative)
-            and self.blur_verified
+            and (self.blur_verified or self.reviewed_at is not None)
         )
 
     @property
@@ -220,6 +226,17 @@ class MediaAsset(BaseModel):
     def mark_needs_review(self, reason: str) -> None:
         self.moderation_status = ModerationStatus.NEEDS_REVIEW
         self.processing_error = reason
+        self.processed_at = timezone.now()
+        self.save(
+            update_fields=[
+                "moderation_status", "processing_error", "processed_at", "updated_at",
+            ]
+        )
+
+    def mark_rejected(self, reason: str) -> None:
+        """Terminal: the pipeline refused the file (malformed, or blur unverifiable)."""
+        self.moderation_status = ModerationStatus.REJECTED
+        self.processing_error = reason[:2000]
         self.processed_at = timezone.now()
         self.save(
             update_fields=[

@@ -10,7 +10,7 @@ import { POLICIES, type PolicySection } from "@/lib/policies";
 export function DraftNotice({ points }: { points: readonly string[] }) {
   if (points.length === 0) return null;
   return (
-    <aside className="rounded-2xl border border-gold-300 bg-gold-50 p-5 text-sm text-ink-900" aria-label="Draft notice">
+    <aside className="rounded-2xl border border-gold-300 bg-gold-50 p-5 text-sm text-ink-900 dark:border-gold-700 dark:bg-gold-900/30 dark:text-gold-100" aria-label="Draft notice">
       <p className="flex items-center gap-2 font-medium">
         <CircleAlert aria-hidden="true" className="size-4" />
         Draft: awaiting confirmation from the atelier

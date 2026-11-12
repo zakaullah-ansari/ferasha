@@ -72,6 +72,8 @@ export interface ProductSummary {
   /** A second angle, shown when the card is hovered or focused. */
   readonly secondary_image: ImageRef | null;
   readonly status: string;
+  /** When the garment was listed (ISO 8601); drives the card's "New" label. */
+  readonly created_at: string;
 }
 
 /** A publishable image: `url` is null unless the privacy pipeline approved it. */

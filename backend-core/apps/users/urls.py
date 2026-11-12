@@ -7,6 +7,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
 from .views import (
+    AccountDeleteView,
+    AccountExportView,
     AddressViewSet,
     CurrentUserView,
     EmailVerificationConfirmView,
@@ -41,6 +43,8 @@ urlpatterns = [
     ),
     path("auth/social/<slug:provider>/", SocialCallbackView.as_view(), name="social-callback"),
     path("auth/me/", CurrentUserView.as_view(), name="current-user"),
+    path("auth/me/export/", AccountExportView.as_view(), name="account-export"),
+    path("auth/me/delete/", AccountDeleteView.as_view(), name="account-delete"),
     path("auth/password/change/", PasswordChangeView.as_view(), name="password-change"),
     path(
         "auth/password/reset/request/",

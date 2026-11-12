@@ -12,6 +12,7 @@ import logging
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.http import FileResponse, HttpResponseForbidden
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.authentication import BaseAuthentication
@@ -25,6 +26,7 @@ from apps.catalog.services import sync_face_coverage
 
 from .callbacks import parse_body, verify_signature
 from .models import MediaAsset, ModerationStatus
+from .services import read_download_token
 
 logger = logging.getLogger(__name__)
 
@@ -188,3 +190,48 @@ class MediaDerivativeUploadView(APIView):
 
         asset.derivative.save(f"{asset.pk}.jpg", ContentFile(payload), save=True)
         return Response({"detail": "Derivative stored.", "bytes": len(payload)})
+
+
+#: While the worker may still need the original. Once settled (approved or
+#: rejected) or sent to a person, the worker has no further business with it.
+_DOWNLOADABLE = frozenset(
+    {ModerationStatus.PENDING, ModerationStatus.PROCESSING, ModerationStatus.FAILED}
+)
+
+
+class MediaOriginalDownloadView(APIView):
+    """``GET /api/v1/media/<uuid>/original/?token=`` - the worker fetches the original.
+
+    The token (services.original_download_path) is signed, short-lived, and
+    bound to this asset and its checksum. Every refusal is the same 403 so a
+    caller learns nothing about which asset IDs exist.
+    """
+
+    authentication_classes = []
+    permission_classes = [AllowAny]  # Authentication is the signed token.
+    throttle_classes = []  # A batch upload must not trip the anon rate limit.
+
+    @extend_schema(
+        operation_id="media_original_download",
+        responses={
+            200: OpenApiResponse(description="The original image bytes."),
+            403: OpenApiResponse(description="Missing, invalid, expired or spent link."),
+        },
+    )
+    def get(self, request, asset_id):
+        try:
+            asset = MediaAsset.objects.get(pk=asset_id)
+        except (MediaAsset.DoesNotExist, DjangoValidationError, ValueError):
+            return HttpResponseForbidden()
+        token = request.query_params.get("token", "")
+        if (
+            not token
+            or asset.moderation_status not in _DOWNLOADABLE
+            or not read_download_token(token, asset)
+        ):
+            return HttpResponseForbidden()
+
+        response = FileResponse(asset.original.open("rb"), content_type=asset.content_type)
+        response["Cache-Control"] = "no-store, private"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response

@@ -45,6 +45,8 @@ export const PRODUCT: ProductDetail = {
   primary_image: null,
   secondary_image: null,
   status: "active",
+  // Listed long ago, so stories and tests never depend on today's date.
+  created_at: "2026-01-15T10:00:00+05:30",
   description: "Hand-worked chikankari on fine Karachi lawn. Three-piece set.",
   care_instructions: "Dry clean only.",
   category: { name: "Karachi Suits", slug: "karachi-suits" },

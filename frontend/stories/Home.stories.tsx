@@ -6,6 +6,7 @@ import { Hero } from "@/components/home/Hero";
 import { ModestyPromise } from "@/components/home/ModestyPromise";
 import { OccasionTiles } from "@/components/home/OccasionTiles";
 import { ProductRail } from "@/components/product/ProductRail";
+import { TabbedProductRail } from "@/components/product/TabbedProductRail";
 import { MobileNav } from "@/components/site/MobileNav";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -37,6 +38,33 @@ export const HeroSection: Story = { render: () => <Hero /> };
 export const Occasions: Story = { render: () => <OccasionTiles /> };
 export const Edit: Story = {
   render: () => <ProductRail eyebrow="The edit" title="New this season" products={EDIT} href="/products" />,
+};
+/**
+ * The homepage edit, one tab per category. Empty categories (here Sharara &
+ * Gharara) drop out rather than showing a dead end; "View all" follows the tab.
+ */
+export const EditTabs: Story = {
+  render: () => (
+    <TabbedProductRail
+      eyebrow="The edit"
+      title="New this season"
+      tabs={[
+        { label: "All", href: "/products", products: EDIT, viewAllLabel: "All garments" },
+        { label: "Suits", href: "/products?category=suits", products: EDIT.slice(0, 2) },
+        { label: "Bridal", href: "/products?category=bridal", products: EDIT.slice(3) },
+        { label: "Sharara & Gharara", href: "/products?category=sharara-gharara", products: [] },
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.queryByRole("tab", { name: "Sharara & Gharara" })).not.toBeInTheDocument();
+    await expect(canvas.getByRole("link", { name: /All garments/ })).toHaveAttribute("href", "/products");
+    await userEvent.click(canvas.getByRole("tab", { name: "Bridal" }));
+    await expect(canvas.getByRole("tab", { name: "Bridal" })).toHaveAttribute("aria-selected", "true");
+    await expect(canvas.getByRole("link", { name: /View all bridal/ })).toHaveAttribute("href", "/products?category=bridal");
+    await expect(await canvas.findByText("Banarasi Bridal Lehenga - Crimson")).toBeInTheDocument();
+  },
 };
 export const PromiseSection: Story = { render: () => <ModestyPromise /> };
 export const Atelier: Story = { render: () => <AtelierStory /> };

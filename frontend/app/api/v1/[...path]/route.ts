@@ -21,7 +21,14 @@ import { ACCESS_COOKIE, backendOrigin, trustedClientIp } from "@/lib/session";
  */
 const FORWARD_REQUEST = ["accept", "accept-language", "content-type", "idempotency-key"];
 /** Response headers the browser should see from Django. */
-const FORWARD_RESPONSE = ["content-type", "cache-control", "idempotent-replayed", "retry-after"];
+const FORWARD_RESPONSE = [
+  "content-type",
+  "cache-control",
+  // Downloads (the "Download my data" file) keep their file name.
+  "content-disposition",
+  "idempotent-replayed",
+  "retry-after",
+];
 
 async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;

@@ -13,7 +13,8 @@ import { type Occasion, OCCASIONS } from "@/lib/navigation";
 // tests/contrast.test.ts): Kausar green, obsidian ink, champagne gold.
 const TONES: Record<Occasion["tone"], string> = {
   primary: "bg-primary text-primary-foreground",
-  ink: "bg-ink-900 text-ivory",
+  // In dark mode an ink field would vanish into the page: a raised card instead.
+  ink: "bg-ink-900 text-ivory dark:bg-card dark:text-card-foreground dark:ring-1 dark:ring-border",
   gold: "bg-gold-200 text-ink-900",
   muted: "bg-muted text-foreground",
 };

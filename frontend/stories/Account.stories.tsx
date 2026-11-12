@@ -78,3 +78,51 @@ export const PasswordRefused: Story = {
     await expect(getRouter().replace).not.toHaveBeenCalled();
   },
 };
+
+/** "Your data": download everything, or delete the account with the password. */
+export const DeletesAccount: Story = {
+  beforeEach: () =>
+    mockFetch([
+      { method: "POST", path: "/api/v1/auth/me/delete/", body: { detail: "Your account has been deleted." } },
+      { method: "POST", path: "/api/session/logout", status: 204 },
+    ]),
+  render: () => <AccountView user={AYESHA} orders={[]} page={1} pageCount={0} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("link", { name: "Download my data" })).toHaveAttribute("href", "/api/v1/auth/me/export/");
+    await userEvent.click(canvas.getByRole("button", { name: "Delete my account" }));
+    // The dialog renders in a portal, outside the story's canvas.
+    const dialog = within(await within(document.body).findByRole("dialog"));
+    const confirm = dialog.getByRole("button", { name: "Delete my account" });
+    await expect(confirm).toBeDisabled();
+    await userEvent.type(dialog.getByLabelText("Your password, to confirm it's you"), "Correct-Horse-9182");
+    await userEvent.click(confirm);
+    await waitFor(() => expect(getRouter().replace).toHaveBeenCalledWith("/account/sign-in?reason=account-deleted"));
+  },
+};
+
+/** An order still being made: the account waits, and the order is named. */
+export const DeleteWaitsForOrders: Story = {
+  beforeEach: () =>
+    mockFetch([
+      {
+        method: "POST",
+        path: "/api/v1/auth/me/delete/",
+        status: 409,
+        body: {
+          detail: "You have orders still in progress (FER-24-0193). Your account can be deleted once they have been delivered or cancelled.",
+          order_numbers: ["FER-24-0193"],
+        },
+      },
+    ]),
+  render: () => <AccountView user={AYESHA} orders={[]} page={1} pageCount={0} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Delete my account" }));
+    const dialog = within(await within(document.body).findByRole("dialog"));
+    await userEvent.type(dialog.getByLabelText("Your password, to confirm it's you"), "Correct-Horse-9182");
+    await userEvent.click(dialog.getByRole("button", { name: "Delete my account" }));
+    await expect(await dialog.findByRole("alert")).toHaveTextContent("FER-24-0193");
+    await expect(getRouter().replace).not.toHaveBeenCalled();
+  },
+};

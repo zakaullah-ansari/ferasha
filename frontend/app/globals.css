@@ -252,6 +252,10 @@
 }
 /*---break---
  */
+/* Dark mode, and the deep forest of the footer and account screens.
+   The green is lifted (L 0.74) so links and green text clear 4.5:1 on the
+   forest, and buttons carry forest-dark lettering on it. --input is solid:
+   field borders need 3:1 against the ground. */
 .dark {
   --background: oklch(0.2 0.035 165);
   --foreground: oklch(0.982 0.008 160);
@@ -259,8 +263,8 @@
   --card-foreground: oklch(0.982 0.008 160);
   --popover: oklch(0.245 0.04 163);
   --popover-foreground: oklch(0.982 0.008 160);
-  --primary: oklch(0.432 0.114 146.187);
-  --primary-foreground: oklch(0.985 0.01 146.187);
+  --primary: oklch(0.74 0.15 150);
+  --primary-foreground: oklch(0.2 0.035 165);
   --secondary: oklch(0.29 0.04 162);
   --secondary-foreground: oklch(0.982 0.008 160);
   --muted: oklch(0.29 0.04 162);
@@ -269,7 +273,7 @@
   --accent-foreground: oklch(0.982 0.008 160);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --input: oklch(0.6 0.03 160);
   --ring: oklch(0.62 0.06 158);
   --chart-1: oklch(0.845 0.114 146.187);
   --chart-2: oklch(0.696 0.114 146.187);
@@ -278,8 +282,8 @@
   --chart-5: oklch(0.432 0.114 146.187);
   --sidebar: oklch(0.245 0.04 163);
   --sidebar-foreground: oklch(0.982 0.008 160);
-  --sidebar-primary: oklch(0.696 0.114 146.187);
-  --sidebar-primary-foreground: oklch(0.262 0.051 146.187);
+  --sidebar-primary: oklch(0.74 0.15 150);
+  --sidebar-primary-foreground: oklch(0.2 0.035 165);
   --sidebar-accent: oklch(0.29 0.04 162);
   --sidebar-accent-foreground: oklch(0.982 0.008 160);
   --sidebar-border: oklch(1 0 0 / 10%);

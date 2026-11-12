@@ -20,7 +20,7 @@ export function ForestBackdrop() {
   const reduceMotion = useReducedMotion();
   return (
     <div aria-hidden className="dark pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-background">
-      <div className="absolute inset-0 bg-radial-[ellipse_70%_60%_at_50%_35%] from-primary/40 via-primary/10 via-50% to-transparent" />
+      <div className="absolute inset-0 bg-radial-[ellipse_70%_60%_at_50%_35%] from-primary/20 via-primary/5 via-50% to-transparent" />
       {!reduceMotion && (
         <Particles className="absolute inset-0" quantity={60} staticity={60} ease={70} vy={-0.05} color={gold[300]} />
       )}

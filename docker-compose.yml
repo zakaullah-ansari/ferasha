@@ -14,6 +14,8 @@ x-django-env: &django-env
   REDIS_URL: redis://redis:6379/0
   JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-insecure-dev-jwt-signing-key-change-me-in-production}
   AI_ENGINE_URL: http://ai-engine:8001
+  # Where the AI worker fetches originals from (signed links in media_assets.services).
+  BACKEND_INTERNAL_URL: http://backend-core:8000
   AI_ENGINE_SHARED_SECRET: ${AI_ENGINE_SHARED_SECRET:-insecure-shared-secret}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
   UNPAID_ORDER_TTL_MINUTES: ${UNPAID_ORDER_TTL_MINUTES:-30}
@@ -155,6 +157,10 @@ services:
       backend-core:
         condition: service_healthy
     command: ["python", "-m", "app.worker"]
+    # The image's HEALTHCHECK probes the API on :8001, which the worker does
+    # not serve; inherited, it marked a working worker "unhealthy" forever.
+    healthcheck:
+      disable: true
 
   # Test-only image: the runtime target has no pytest. Behind a profile so
   # `docker compose up` never starts it; `docker compose run --rm ai-tests`

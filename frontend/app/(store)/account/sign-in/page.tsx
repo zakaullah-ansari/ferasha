@@ -10,6 +10,10 @@ export const metadata: Metadata = { title: "Sign in", robots: { index: false } }
 const NOTICES = {
   "password-changed": { tone: "info", message: "Your password has been changed. Please sign in with the new one." },
   "password-reset": { tone: "info", message: "Your password has been reset. Please sign in with the new one." },
+  "account-deleted": {
+    tone: "info",
+    message: "Your account has been deleted and your details erased. We've emailed you a confirmation.",
+  },
   "oauth-cancelled": { tone: "info", message: "Sign-in was cancelled. Try again, or use your email below." },
   "oauth-failed": {
     tone: "error",

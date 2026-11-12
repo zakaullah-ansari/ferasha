@@ -2,15 +2,31 @@ import { AtelierStory } from "@/components/home/AtelierStory";
 import { Hero } from "@/components/home/Hero";
 import { ModestyPromise } from "@/components/home/ModestyPromise";
 import { OccasionTiles } from "@/components/home/OccasionTiles";
-import { ProductRail } from "@/components/product/ProductRail";
+import { TabbedProductRail } from "@/components/product/TabbedProductRail";
 import { TrustStrip } from "@/components/site/TrustStrip";
 import { api } from "@/lib/api/client";
+import { CATEGORY_NAV } from "@/lib/navigation";
 
 /** ISR: the catalogue is SEO-critical and changes rarely. */
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const { results } = await api.listProducts({ page_size: 8 });
+  // All tabs load together on the server (newest first, the API's default
+  // order). "All" fails the page as before; a category that fails to load
+  // just loses its tab, rather than taking the homepage down with it.
+  const [all, ...byCategory] = await Promise.allSettled([
+    api.listProducts({ page_size: 8 }),
+    ...CATEGORY_NAV.map((link) => api.listProducts({ page_size: 8, category: link.category })),
+  ]);
+  if (all.status === "rejected") throw all.reason;
+
+  const tabs = [
+    { label: "All", href: "/products", products: all.value.results, viewAllLabel: "All garments" },
+    ...CATEGORY_NAV.flatMap((link, index) => {
+      const result = byCategory[index];
+      return result?.status === "fulfilled" ? [{ label: link.label, href: link.href, products: result.value.results }] : [];
+    }),
+  ];
 
   return (
     <>
@@ -20,13 +36,7 @@ export default async function HomePage() {
         <TrustStrip className="mx-auto max-w-6xl px-5 py-8" />
       </div>
       <OccasionTiles />
-      <ProductRail
-        eyebrow="The edit"
-        title="New this season"
-        products={results}
-        href="/products"
-        hrefLabel="All garments"
-      />
+      <TabbedProductRail eyebrow="The edit" title="New this season" tabs={tabs} />
       <ModestyPromise />
       <AtelierStory />
     </>

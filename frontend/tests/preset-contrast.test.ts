@@ -40,29 +40,31 @@ function paint(tokens: Record<string, string>, name: string): string {
   return oklchToHex(value, oklchToHex(tokens["--background"]!));
 }
 
+/** Text pairs the storefront renders, in both modes. */
+const TEXT_PAIRS = [
+  ["foreground", "background"],
+  ["card-foreground", "card"],
+  ["popover-foreground", "popover"],
+  ["muted-foreground", "background"],
+  ["muted-foreground", "muted"],
+  ["muted-foreground", "card"],
+  ["primary-foreground", "primary"],
+  ["primary", "background"],
+  ["primary", "card"],
+  ["secondary-foreground", "secondary"],
+  ["accent-foreground", "accent"],
+  ["destructive", "background"],
+] as const;
+
 describe("text pairs the storefront renders clear AA body text (4.5:1)", () => {
-  it.each([
-    ["foreground", "background"],
-    ["card-foreground", "card"],
-    ["popover-foreground", "popover"],
-    ["muted-foreground", "background"],
-    ["muted-foreground", "muted"],
-    ["primary-foreground", "primary"],
-    ["primary", "background"],
-    ["secondary-foreground", "secondary"],
-    ["accent-foreground", "accent"],
-    ["destructive", "background"],
-  ])("light: %s on %s", (fg, bg) => {
+  it.each(TEXT_PAIRS)("light: %s on %s", (fg, bg) => {
     expect(contrastRatio(paint(light, fg), paint(light, bg))).toBeGreaterThanOrEqual(
       WCAG.AA_BODY,
     );
   });
 
-  // The site footer is scoped with `.dark`.
-  it.each([
-    ["foreground", "background"],
-    ["muted-foreground", "background"],
-  ])("dark: %s on %s", (fg, bg) => {
+  // Dark mode, and the footer and account backdrop, which are scoped with `.dark`.
+  it.each(TEXT_PAIRS)("dark: %s on %s", (fg, bg) => {
     expect(contrastRatio(paint(dark, fg), paint(dark, bg))).toBeGreaterThanOrEqual(
       WCAG.AA_BODY,
     );
@@ -121,10 +123,23 @@ describe("non-text UI clears 3:1", () => {
     },
   );
 
-  it("the focus ring inside the .dark footer", () => {
-    expect(contrastRatio(paint(dark, "ring"), paint(dark, "background"))).toBeGreaterThanOrEqual(
+  it.each(["background", "muted", "card"])("dark: the focus ring on --%s", (surface) => {
+    expect(contrastRatio(paint(dark, "ring"), paint(dark, surface))).toBeGreaterThanOrEqual(
       WCAG.AA_NON_TEXT,
     );
+  });
+
+  it("dark: input borders", () => {
+    expect(contrastRatio(paint(dark, "input"), paint(dark, "background"))).toBeGreaterThanOrEqual(
+      WCAG.AA_NON_TEXT,
+    );
+  });
+
+  it("dark: button hover, primary-foreground on primary darkened by hover:brightness-90", () => {
+    // brightness(0.9) scales each sRGB channel; approximate it on the hex.
+    const hex = paint(dark, "primary");
+    const dimmed = "#" + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * 0.9).toString(16).padStart(2, "0")).join("");
+    expect(contrastRatio(paint(dark, "primary-foreground"), dimmed)).toBeGreaterThanOrEqual(WCAG.AA_BODY);
   });
 
   it("draws the global focus outline in --ring", () => {

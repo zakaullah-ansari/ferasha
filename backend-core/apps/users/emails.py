@@ -108,3 +108,38 @@ def send_password_changed_notice(user) -> None:
         cta_url=url,
     )
     send("Your Ferasha password was changed", user.email, text, html)
+
+
+def send_account_deleted_notice(email: str, full_name: str) -> None:
+    """Confirmation that the account is gone, sent to the address it had.
+
+    Takes the address and name rather than the user: by the time this is
+    sent the account row is deleted or no longer holds them. Also a
+    tripwire: someone who did not ask for this learns of it at once.
+    """
+    name = first_name(full_name)
+    url = frontend_url("/")
+    text = (
+        f"Hello {name},\n\n"
+        "Your Ferasha account has been deleted, as you asked. Your saved "
+        "addresses, measurements, reviews and preferences have been erased.\n\n"
+        "Past orders are kept only as far as Indian tax law requires invoices "
+        "to be kept, and are no longer linked to you by name or email.\n\n"
+        "If you did not ask for this, reply to this email straight away.\n"
+    )
+    html = wrap(
+        heading="Your account has been deleted",
+        body_html=(
+            "<p style='font-size:15px;line-height:1.7;margin:0 0 12px;'>As you asked, your "
+            "Ferasha account is closed and your saved addresses, measurements, reviews and "
+            "preferences have been erased.</p>"
+            "<p style='font-size:13px;color:#6b5d4d;line-height:1.7;margin:0 0 12px;'>Past "
+            "orders are kept only as far as Indian tax law requires invoices to be kept, and "
+            "are no longer linked to you by name or email.</p>"
+            "<p style='font-size:13px;color:#6b5d4d;line-height:1.7;margin:0;'>If you did not "
+            "ask for this, reply to this email straight away.</p>"
+        ),
+        cta_label="Visit Ferasha",
+        cta_url=url,
+    )
+    send("Your Ferasha account has been deleted", email, text, html)

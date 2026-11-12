@@ -298,6 +298,25 @@ def revoke_all_refresh_tokens(user) -> int:
     return len(live)
 
 
+class AccountDeleteSerializer(serializers.Serializer):
+    """Closing an account needs the password again: a session left open on a
+    shared computer must not be enough to erase someone's account."""
+
+    password = serializers.CharField(write_only=True, style={"input_type": "password"})
+
+    def validate_password(self, value: str) -> str:
+        user = self.context["request"].user
+        if not user.has_usable_password():
+            # Signed up with Google and never set a password: "Forgot password"
+            # sets one, which proves control of the mailbox first.
+            raise serializers.ValidationError(
+                _("Set a password first (use \"Forgot password\"), then delete the account.")
+            )
+        if not user.check_password(value):
+            raise serializers.ValidationError(_("That password is not right."))
+        return value
+
+
 class EmailVerificationRequestSerializer(serializers.Serializer):
     """Request a fresh verification email.
 

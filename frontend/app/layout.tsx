@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ThemeProvider } from "@/components/theme-provider";
 import { fontVariables } from "@/lib/fonts";
 
 import "./globals.css";
@@ -16,8 +17,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  // The preset's --foreground, oklch(0.153 0.006 107.1), in sRGB.
-  themeColor: "#0c0c09",
+  // The browser bar takes the page ground: mint in light, forest in dark.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafdfb" },
+    { media: "(prefers-color-scheme: dark)", color: "#041b12" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
@@ -26,7 +30,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-IN" className={fontVariables}>
+    // suppressHydrationWarning: next-themes sets the class on <html> before
+    // React hydrates (only this element's attributes are exempted).
+    <html lang="en-IN" className={fontVariables} suppressHydrationWarning>
       {/* relative: the drawer positions correctly on iOS Safari (shadcn drawer docs). */}
       <body className="relative min-h-dvh bg-background text-foreground antialiased">
         {/* Skip link: the first tab stop on every page. */}
@@ -37,7 +43,7 @@ export default function RootLayout({
           Skip to content
         </a>
         {/* Each route group brings its own chrome and its <main id="main">. */}
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

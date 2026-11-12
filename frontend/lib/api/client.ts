@@ -245,6 +245,14 @@ export const api = {
     }): Promise<{ detail: string }> {
       return send("/api/v1/auth/password/change/", { method: "POST", body: details });
     },
+    /**
+     * Closes the account and erases its data (DPDP Act s.12). Needs the
+     * password; refused with 409 while an order is in progress. Every session
+     * is revoked, this one included.
+     */
+    deleteAccount(password: string): Promise<{ detail: string }> {
+      return send("/api/v1/auth/me/delete/", { method: "POST", body: { password } });
+    },
   },
 
   cart: {

@@ -154,3 +154,10 @@ describe("inverse surface", () => {
     expect(passesBodyText(BRAND.gold, surface.inverse)).toBe(true);
   });
 });
+
+describe("merchandising labels", () => {
+  it("the card's New label (ink on gold-200) passes as small body text", () => {
+    // 0.75rem uppercase is small text, so it needs the full 4.5:1.
+    expect(passesBodyText(ink[900], gold[200])).toBe(true);
+  });
+});

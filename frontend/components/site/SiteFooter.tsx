@@ -7,7 +7,8 @@ import { ATELIER, ATELIER_MAPS_HREF, TAGLINE } from "@/lib/brand";
 import { FULLY_COVERED, LEGAL, OCCASIONS, PRIMARY_NAV, SUPPORT, type NavLink } from "@/lib/navigation";
 
 /**
- * The site footer, after Housiq's: brand and ways to reach the atelier, link
+ * The site footer, after Housiq's (in dark mode a hairline separates it from
+ * the forest page above): brand and ways to reach the atelier, link
  * columns under gold headings, a hairline, a quiet bottom bar with the legal
  * links, and the wordmark set huge in a gold fade, running off the bottom edge.
  *
@@ -16,7 +17,7 @@ import { FULLY_COVERED, LEGAL, OCCASIONS, PRIMARY_NAV, SUPPORT, type NavLink } f
  */
 export function SiteFooter() {
   return (
-    <footer className="dark relative mt-24 overflow-hidden bg-background text-foreground">
+    <footer className="dark relative mt-24 overflow-hidden border-t border-border bg-background text-foreground">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 pt-16 pb-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1.5fr]">
         <div>
           <p className="font-display text-3xl">Ferasha</p>

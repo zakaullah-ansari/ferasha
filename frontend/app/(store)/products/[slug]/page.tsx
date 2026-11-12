@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CoverageScore, ModestyBadgeList } from "@/components/ModestyBadge";
 import { ProductDetails } from "@/components/product/ProductDetails";
 import { ProductGallery } from "@/components/product/ProductGallery";
+import { Price } from "@/components/product/Price";
 import { ProductRail } from "@/components/product/ProductRail";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { ProductPurchasePanel } from "@/components/ProductPurchasePanel";
@@ -18,7 +19,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { ApiError, api } from "@/lib/api/client";
 import type { ReviewSummary } from "@/lib/api/types";
-import { formatINR } from "@/lib/format";
 
 export const revalidate = 60;
 
@@ -103,14 +103,7 @@ export default async function ProductPage({
           <p className="text-xs tracking-[0.25em] text-muted-foreground uppercase">{product.category.name}</p>
           <h1 className="mt-3 font-display text-display-sm leading-tight">{product.name}</h1>
 
-          <p className="mt-3 text-xl">
-            {formatINR(product.base_price)}
-            {product.compare_at_price && (
-              <span className="ml-3 text-sm text-muted-foreground line-through">
-                {formatINR(product.compare_at_price)}
-              </span>
-            )}
-          </p>
+          <Price price={product.base_price} compareAt={product.compare_at_price} className="mt-3 text-xl" />
 
           {/*
             Modesty disclosure sits above the fold and above the buy button,

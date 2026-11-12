@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db import transaction
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import (
     OpenApiResponse,
@@ -20,13 +21,15 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .account_data import AccountDeletionBlocked, delete_account, export_account_data
 from .emails import (
+    send_account_deleted_notice,
     send_email_verification,
     send_password_changed_notice,
     send_password_reset,
@@ -34,6 +37,7 @@ from .emails import (
 from .models import Address
 from .permissions import IsOwnerOrBackOffice
 from .serializers import (
+    AccountDeleteSerializer,
     AddressSerializer,
     EmailVerificationConfirmSerializer,
     EmailVerificationRequestSerializer,
@@ -304,6 +308,95 @@ class CurrentUserView(RetrieveUpdateAPIView):
             .objects.prefetch_related("addresses")
             .get(pk=self.request.user.pk)
         )
+
+
+class AccountDataThrottle(UserRateThrottle):
+    """Per account. An export is a heavy query; a deletion attempt checks a
+    password, so it must not become a way to guess one."""
+
+    scope = "account_data"
+    rate = "10/hour"
+
+
+class AccountExportView(APIView):
+    """GET /api/v1/auth/me/export/ - everything the shop holds about you."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (AccountDataThrottle,)
+
+    @extend_schema(
+        summary="Download my data",
+        description=(
+            "The signed-in customer's profile, addresses, linked sign-ins, fit "
+            "profiles, orders and reviews as one JSON file (DPDP Act s.11)."
+        ),
+        responses={200: OpenApiResponse(description="JSON attachment.")},
+        tags=["auth"],
+    )
+    def get(self, request):
+        response = Response(export_account_data(request.user))
+        stamp = timezone.now().strftime("%Y-%m-%d")
+        response["Content-Disposition"] = f'attachment; filename="ferasha-my-data-{stamp}.json"'
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class AccountDeleteView(APIView):
+    """POST /api/v1/auth/me/delete/ - close the account and erase its data."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (AccountDataThrottle,)
+    serializer_class = AccountDeleteSerializer
+
+    @extend_schema(
+        summary="Delete my account",
+        description=(
+            "Needs the current password. Erases addresses, measurements, reviews, "
+            "linked sign-ins and preferences and signs out every session (DPDP Act "
+            "s.12). Orders are kept as tax law requires, no longer linked to anyone. "
+            "Refused (409) while an order is in progress; staff accounts are closed "
+            "by an admin (403)."
+        ),
+        request=AccountDeleteSerializer,
+        responses={
+            200: inline_serializer(
+                name="AccountDeleteResponse", fields={"detail": drf_serializers.CharField()}
+            ),
+            400: OpenApiResponse(description="Password missing or wrong."),
+            403: OpenApiResponse(description="Staff account."),
+            409: OpenApiResponse(description="Orders still in progress."),
+        },
+        tags=["auth"],
+    )
+    def post(self, request):
+        user = request.user
+        if user.is_back_office:
+            return Response(
+                {"detail": "Staff accounts are closed by an administrator."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = AccountDeleteSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        email, full_name = user.email, user.full_name
+        try:
+            delete_account(user)
+        except AccountDeletionBlocked as blocked:
+            numbers = ", ".join(blocked.order_numbers)
+            return Response(
+                {
+                    "detail": (
+                        f"You have orders still in progress ({numbers}). Your account can "
+                        "be deleted once they have been delivered or cancelled. An order "
+                        "left unpaid is cancelled on its own within "
+                        f"{settings.UNPAID_ORDER_TTL_MINUTES} minutes."
+                    ),
+                    "order_numbers": blocked.order_numbers,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        send_account_deleted_notice(email, full_name)
+        return Response({"detail": "Your account has been deleted."}, status=status.HTTP_200_OK)
 
 
 class PasswordChangeView(APIView):

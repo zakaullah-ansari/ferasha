@@ -22,6 +22,12 @@ export const PRIMARY_NAV: readonly NavLink[] = [
   { label: "Bespoke", href: "/products?supports_bespoke=true" },
 ];
 
+/** The header's category links, with their catalogue slug: the homepage tabs. */
+export const CATEGORY_NAV: readonly (NavLink & { readonly category: string })[] = PRIMARY_NAV.flatMap((link) => {
+  const category = new URLSearchParams(link.href.split("?")[1]).get("category");
+  return category ? [{ ...link, category }] : [];
+});
+
 export interface Occasion extends NavLink {
   readonly note: string;
   /** Tone of the tile until photography arrives; a theme token, not a colour. */
@@ -50,6 +56,15 @@ export const LEGAL: readonly NavLink[] = [
 
 /** Every help page; they live in lib/policies.ts and app/(store)/contact. */
 export const HELP: readonly NavLink[] = [...SUPPORT, ...LEGAL];
+
+/**
+ * Either side of the announcement strip. "Track order" is the order history in
+ * My account (sign-in first); there is no guest order lookup yet.
+ */
+export const UTILITY_LINKS: readonly [NavLink, NavLink] = [
+  { label: "Track order", href: "/account" },
+  { label: "Contact", href: "/contact" },
+];
 
 /** Shortcut into the catalogue's strongest modesty filter. */
 export const FULLY_COVERED: NavLink = { label: "Shop fully covered", href: "/products?fully_covered=true" };

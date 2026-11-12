@@ -48,6 +48,16 @@ if not DEBUG and len(JWT_SIGNING_KEY.encode("utf-8")) < 32:
     )
 AI_ENGINE_URL = env("AI_ENGINE_URL", "http://localhost:8001")
 AI_ENGINE_SHARED_SECRET = env("AI_ENGINE_SHARED_SECRET", "insecure-shared-secret")
+# How the AI worker reaches this backend (inside Docker: http://backend-core:8000).
+BACKEND_INTERNAL_URL = env("BACKEND_INTERNAL_URL", "http://localhost:8000")
+# Image uploads (media_assets.services). The queue name and limits mirror the
+# AI engine's settings (media_queue, max_upload_bytes, max_dimension).
+MEDIA_BLUR_QUEUE = "ferasha:media:blur"
+MEDIA_UPLOAD_MAX_BYTES = 25 * 1024 * 1024
+MEDIA_UPLOAD_MAX_DIMENSION = 8192
+# Seconds the worker's signed link to an original stays valid. Covers the
+# worker's retries with backoff; "Send to the privacy check again" mints a new one.
+MEDIA_ORIGINAL_LINK_MAX_AGE = 60 * 60
 
 INSTALLED_APPS = [
     # django-unfold restyles the admin; it must load before django.contrib.admin.

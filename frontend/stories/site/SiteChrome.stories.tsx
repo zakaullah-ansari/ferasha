@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { PrimaryNavLinks } from "@/components/site/PrimaryNavLinks";
+import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -42,4 +44,24 @@ export const Buttons: Story = {
       <Button variant="link">View all</Button>
     </div>
   ),
+};
+
+/** The light/dark switch: the new theme spreads out in a circle from the button. */
+export const ThemeSwitch: Story = {
+  render: () => (
+    <ThemeProvider defaultTheme="light" storageKey="storybook-theme">
+      <ThemeToggle />
+    </ThemeProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const root = document.documentElement;
+    await userEvent.click(await canvas.findByRole("button", { name: "Switch to dark theme" }));
+    await waitFor(() => expect(root).toHaveClass("dark"));
+    // The toggler ignores clicks while its circle is still drawing, so a
+    // double click cannot leave the theme half-switched: let it finish.
+    await waitFor(() => expect(root.dataset.magicuiThemeVt).toBeUndefined());
+    await userEvent.click(await canvas.findByRole("button", { name: "Switch to light theme" }));
+    await waitFor(() => expect(root).not.toHaveClass("dark"));
+  },
 };
