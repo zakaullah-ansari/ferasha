@@ -9,6 +9,17 @@ run before it is committed. If a story could not be run, the entry says so.
 
 ## Done
 
+### 12 November 2026
+
+| Enhancement | What it does, and why | Commit |
+|---|---|---|
+| Sign-in pages on silk | Sign-in, register, forgot/reset password and email confirmation now sit on a fine silk twill (gold threads one way, green the other, under a soft sheen) that fades out before the footer: a fabric house's own texture, in place of the coloured glows, which ended in a hard line above the footer. Drawn in SVG from the theme colours (Magic UI's striped pattern): a few hundred bytes, no photo, nothing moving, so nothing extra for a phone to load or run. The card is solid white and rises in gently, in CSS, so it never waits for the page's scripts, and stays still for anyone who has turned motion off. Inspired by Housiq's textured sign-in; Finvo's and Housiq's full-screen sign-in without the shop header was offered and declined in favour of keeping the shop around it. Skipped: Magic UI's noise texture (a filter that phones redraw slowly over a whole page). | this commit |
+| White form fields everywhere | Text boxes, dropdowns and text areas were filled grey, which read as "switched off". They are now white with the theme's tested border, as the contrast test already assumed: on the sign-in pages, checkout, search and My account alike. Dark mode is unchanged. | this commit |
+| "Sign in" on one line on phones | On phones the header's "Sign in" wrapped onto two lines and pushed the Ferasha wordmark off centre. It is now the person icon alone on phones (screen readers still hear "Sign in"), with the word from tablet up. New story: Commerce / HeaderActions / Guest On Phone. | this commit |
+| Forest green theme | The whole site now wears the green of the Finvo and Housiq templates: headings and body text in a green-black ink instead of charcoal, a faint mint page ground so white cards and fields lift off it, and every grey, border and soft fill carrying a trace of green (they leaned olive, and one even leaned violet). The footer is now a deep forest green, like Housiq's. Buttons stay Kausar Dezine Studio's own green and gold stays the accent: Housiq's teal button and Finvo's lime were declined, the first because the shop already has a real brand green, the second because gold does the same job on dark green and suits a luxury house. The sign-in pages' silk now weaves green over a mint ground with gold as the cross thread. Every colour pair is held to the accessibility contrast rules; the focus ring and the error red were darkened a touch to keep passing on the mint. The admin's greys follow the new ink automatically. New story: UI / Palette / Forest. | this commit |
+
+Stories run for this change: Palette, Account forms, Account recovery, Header actions, Checkout flow and Button (31 of 31 pass); unit tests 343 of 343, including the contrast and admin-colour sync checks. Checked in a real browser at laptop and phone widths.
+
 ### 9 November 2026
 
 | Enhancement | What it does, and why | Commit |

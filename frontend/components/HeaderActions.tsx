@@ -54,18 +54,21 @@ export function HeaderActions() {
       {/* Holds the link's space while the session check runs, so the header
           does not shift when "Sign in" appears. */}
       {user === undefined && (
-        <span aria-hidden="true" className="invisible inline-flex items-center gap-1.5 text-sm">
+        <span aria-hidden="true" className="invisible inline-flex items-center gap-1.5 p-2 text-sm whitespace-nowrap sm:p-0">
           <User className="size-4" />
-          Sign in
+          <span className="hidden sm:inline">Sign in</span>
         </span>
       )}
+      {/* Icon only on phones, where the label wrapped onto two lines and
+          pushed the wordmark off centre; the name stays for screen readers.
+          The padding keeps the icon a comfortable tap target. */}
       {user === null && (
         <Link
           href="/account/sign-in"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1.5 p-2 text-sm whitespace-nowrap text-muted-foreground hover:text-foreground sm:p-0"
         >
           <User className="size-4" aria-hidden="true" />
-          Sign in
+          <span className="sr-only sm:not-sr-only">Sign in</span>
         </Link>
       )}
       {user && (

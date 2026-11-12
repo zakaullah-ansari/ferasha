@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
+import { expect, within } from "storybook/test";
+
 import { HeaderActions } from "@/components/HeaderActions";
 import { useCartStore } from "@/store/useCartStore";
 
@@ -34,3 +36,18 @@ function scenario(signedIn: boolean, items: typeof BAG) {
 export const Guest: Story = { beforeEach: scenario(false, []) };
 export const GuestWithBag: Story = { beforeEach: scenario(false, BAG) };
 export const SignedIn: Story = { beforeEach: scenario(true, BAG) };
+
+/**
+ * Guest on a phone: the account link is the person icon alone (it used to
+ * wrap "Sign in" onto two lines and push the wordmark off centre). Screen
+ * readers still hear "Sign in".
+ */
+export const GuestOnPhone: Story = {
+  beforeEach: scenario(false, []),
+  globals: { viewport: { value: "mobile1" } },
+  play: async ({ canvasElement }) => {
+    const link = await within(canvasElement).findByRole("link", { name: "Sign in" });
+    // One line: a wrapped label would be roughly twice as tall.
+    await expect(link.getBoundingClientRect().height).toBeLessThan(40);
+  },
+};

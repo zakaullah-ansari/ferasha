@@ -36,7 +36,7 @@ def _item(title, icon: str, app_label: str, model: str) -> dict:
 #: frontend/tests/admin-theme-sync.test.ts fails if these two drift from it.
 #: Every admin shade below is derived from them, never typed by hand.
 STOREFRONT_PRIMARY = "oklch(0.5 0.114 146.187)"  # Kausar Dezine Studio green
-STOREFRONT_FOREGROUND = "oklch(0.153 0.006 107.1)"  # warm olive ink
+STOREFRONT_FOREGROUND = "oklch(0.235 0.045 162)"  # forest ink
 
 _STEPS = ("50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950")
 
@@ -61,10 +61,10 @@ def _primary_ramp(oklch: str) -> dict[str, str]:
 
 
 def _neutral_ramp(oklch: str) -> dict[str, str]:
-    """Greys carrying the storefront ink's warm olive hue instead of
-    unfold's default cool slate; 950 is the ink itself."""
+    """Greys carrying the storefront ink's forest hue instead of unfold's
+    default cool slate; 900 is the ink's lightness, 950 one step darker."""
     lightness, _chroma, hue = _lch(oklch)
-    lightnesses = (0.988, 0.966, 0.93, 0.87, 0.707, 0.54, 0.445, 0.37, 0.26, 0.21, lightness)
+    lightnesses = (0.988, 0.966, 0.93, 0.87, 0.707, 0.54, 0.445, 0.37, 0.3, lightness, 0.17)
     chromas = (0.003, 0.005, 0.007, 0.009, 0.014, 0.02, 0.018, 0.015, 0.012, 0.01, 0.006)
     return {
         step: f"oklch({l_ * 100:.1f}% {c:.3f} {hue})"

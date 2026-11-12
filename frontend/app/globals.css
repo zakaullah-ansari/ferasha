@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /**
- * The storefront paints with the shadcn preset tokens (b2C8AG0WZ: maia, olive)
+ * The storefront paints with the shadcn preset tokens (b2C8AG0WZ: maia), retinted from olive to forest neutrals
  * declared at the end of this file, with the primary moved from the preset's
  * emerald to Kausar Dezine Studio's forest green; their pairs are contrast-tested in
  * `tests/preset-contrast.test.ts`. The Ferasha palette below is kept, and still
@@ -195,85 +195,88 @@
 /*---break---
  */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.153 0.006 107.1);
+  /* Forest neutrals, after the Finvo and Housiq templates: every grey carries
+     a trace of green (hue 155-165, the preset's olive was 107), the ink is a
+     green-black rather than charcoal, and the page ground is a faint mint so
+     white cards and fields lift off it. The .dark set below is the deep
+     forest the footer is painted in. */
+  --background: oklch(0.992 0.005 160);
+  --foreground: oklch(0.235 0.045 162);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.153 0.006 107.1);
+  --card-foreground: oklch(0.235 0.045 162);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.153 0.006 107.1);
+  --popover-foreground: oklch(0.235 0.045 162);
   /* Kausar Dezine Studio forest green (#307439, sampled from the owner's
      brand mark), replacing the preset's teal emerald. Same lightness and
      chroma as the emerald it replaced, so its contrast tuning carries over;
      charts and the dark mode use the same hue at the preset's steps. */
   --primary: oklch(0.5 0.114 146.187);
   --primary-foreground: oklch(0.985 0.01 146.187);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.966 0.005 106.5);
-  /* Preset value is oklch(0.58 0.031 107.3): 4.25:1 on white, below AA for
-     body text. Same hue and chroma, darkened just enough to clear 4.5:1 on
-     both --background and --muted. */
-  --muted-foreground: oklch(0.54 0.031 107.3);
-  --accent: oklch(0.966 0.005 106.5);
-  --accent-foreground: oklch(0.228 0.013 107.4);
-  /* Three more preset values darkened (lightness only) to meet the WCAG rules
-     in tests/preset-contrast.test.ts. Preset originals in brackets.
-     - destructive [L 0.577]: text on its own /10 tint was 4.01:1.
-     - input [L 0.93]: a 1.23:1 field border; controls need 3:1. --border
-       keeps the pale value, so use it for dividers only.
-     - ring [L 0.737]: maia's ring-ring/50 focus halo was 1.47:1; now 3:1 on
-       both --background and --muted (where maia tabs sit). */
-  --destructive: oklch(0.532 0.245 27.325);
-  --border: oklch(0.93 0.007 106.5);
-  --input: oklch(0.66 0.007 106.5);
-  --ring: oklch(0.258 0.021 106.9);
+  --secondary: oklch(0.955 0.02 155);
+  --secondary-foreground: oklch(0.27 0.05 158);
+  --muted: oklch(0.963 0.012 160);
+  /* Dark enough to clear 4.5:1 body text on both --background and --muted. */
+  --muted-foreground: oklch(0.5 0.035 162);
+  --accent: oklch(0.955 0.02 155);
+  --accent-foreground: oklch(0.27 0.05 158);
+  /* Three preset values darkened to meet the WCAG rules in
+     tests/preset-contrast.test.ts. Preset originals in brackets.
+     - destructive [L 0.577]: text on its own /10 tint needs 4.5:1.
+     - input [L 0.93]: a field border; controls need 3:1. --border keeps a
+       pale value, so use it for dividers only.
+     - ring [L 0.737]: maia's ring-ring/50 focus halo needs 3:1 on both
+       --background and --muted (where maia tabs sit). */
+  --destructive: oklch(0.52 0.235 27.325);
+  --border: oklch(0.918 0.016 160);
+  --input: oklch(0.66 0.025 160);
+  --ring: oklch(0.25 0.045 158);
   --chart-1: oklch(0.845 0.114 146.187);
   --chart-2: oklch(0.696 0.114 146.187);
   --chart-3: oklch(0.596 0.114 146.187);
   --chart-4: oklch(0.508 0.114 146.187);
   --chart-5: oklch(0.432 0.114 146.187);
   --radius: 0.875rem;
-  --sidebar: oklch(0.988 0.003 106.5);
-  --sidebar-foreground: oklch(0.153 0.006 107.1);
+  --sidebar: oklch(0.985 0.008 160);
+  --sidebar-foreground: oklch(0.235 0.045 162);
   --sidebar-primary: oklch(0.5 0.114 146.187);
   --sidebar-primary-foreground: oklch(0.985 0.01 146.187);
-  --sidebar-accent: oklch(0.966 0.005 106.5);
-  --sidebar-accent-foreground: oklch(0.228 0.013 107.4);
-  --sidebar-border: oklch(0.93 0.007 106.5);
-  --sidebar-ring: oklch(0.737 0.021 106.9);
+  --sidebar-accent: oklch(0.955 0.02 155);
+  --sidebar-accent-foreground: oklch(0.27 0.05 158);
+  --sidebar-border: oklch(0.918 0.016 160);
+  --sidebar-ring: oklch(0.7 0.04 158);
 }
 /*---break---
  */
 .dark {
-  --background: oklch(0.153 0.006 107.1);
-  --foreground: oklch(0.988 0.003 106.5);
-  --card: oklch(0.228 0.013 107.4);
-  --card-foreground: oklch(0.988 0.003 106.5);
-  --popover: oklch(0.228 0.013 107.4);
-  --popover-foreground: oklch(0.988 0.003 106.5);
+  --background: oklch(0.2 0.035 165);
+  --foreground: oklch(0.982 0.008 160);
+  --card: oklch(0.245 0.04 163);
+  --card-foreground: oklch(0.982 0.008 160);
+  --popover: oklch(0.245 0.04 163);
+  --popover-foreground: oklch(0.982 0.008 160);
   --primary: oklch(0.432 0.114 146.187);
   --primary-foreground: oklch(0.985 0.01 146.187);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.286 0.016 107.4);
-  --muted-foreground: oklch(0.737 0.021 106.9);
-  --accent: oklch(0.286 0.016 107.4);
-  --accent-foreground: oklch(0.988 0.003 106.5);
+  --secondary: oklch(0.29 0.04 162);
+  --secondary-foreground: oklch(0.982 0.008 160);
+  --muted: oklch(0.29 0.04 162);
+  --muted-foreground: oklch(0.76 0.03 158);
+  --accent: oklch(0.29 0.04 162);
+  --accent-foreground: oklch(0.982 0.008 160);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.58 0.031 107.3);
+  --ring: oklch(0.62 0.06 158);
   --chart-1: oklch(0.845 0.114 146.187);
   --chart-2: oklch(0.696 0.114 146.187);
   --chart-3: oklch(0.596 0.114 146.187);
   --chart-4: oklch(0.508 0.114 146.187);
   --chart-5: oklch(0.432 0.114 146.187);
-  --sidebar: oklch(0.228 0.013 107.4);
-  --sidebar-foreground: oklch(0.988 0.003 106.5);
+  --sidebar: oklch(0.245 0.04 163);
+  --sidebar-foreground: oklch(0.982 0.008 160);
   --sidebar-primary: oklch(0.696 0.114 146.187);
   --sidebar-primary-foreground: oklch(0.262 0.051 146.187);
-  --sidebar-accent: oklch(0.286 0.016 107.4);
-  --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
+  --sidebar-accent: oklch(0.29 0.04 162);
+  --sidebar-accent-foreground: oklch(0.982 0.008 160);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.58 0.031 107.3);
+  --sidebar-ring: oklch(0.62 0.06 158);
 }

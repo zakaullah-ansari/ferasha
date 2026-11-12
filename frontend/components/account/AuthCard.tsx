@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { StripedPattern } from "@/components/ui/striped-pattern";
 import { cn } from "@/lib/cn";
 import { TRUST_POINTS } from "@/lib/trust";
 
@@ -17,17 +18,33 @@ const REASSURANCE = TRUST_POINTS.filter((point) => point.id === "coverage" || po
 
 /**
  * The page frame every account screen shares (sign-in, register, reset,
- * verification): a soft wash of the brand's gold and green behind one
- * centred card. Decorative layers are aria-hidden and ignore the pointer.
+ * verification): one centred card on a silk weave.
  */
 export function AuthPage({ children }: { children: ReactNode }) {
   return (
     <div className="relative isolate overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 -left-24 size-[28rem] rounded-full bg-gold-200/50 blur-3xl" />
-        <div className="absolute -right-24 -bottom-40 size-[32rem] rounded-full bg-primary/15 blur-3xl" />
-      </div>
-      <div className="mx-auto flex max-w-6xl justify-center px-4 py-10 sm:px-5 md:py-16">{children}</div>
+      <SilkWeave />
+      <div className="mx-auto flex max-w-6xl justify-center px-4 py-12 sm:px-5 md:py-20">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * A fine twill, the way silk looks up close: forest-green threads one way,
+ * gold the other, on a mint ground, under a soft diagonal sheen, fading out
+ * toward the edges so the frame never ends in a hard line above the footer.
+ * Still SVG, a few hundred bytes, nothing animating: free on a phone.
+ * Decorative only.
+ */
+function SilkWeave() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 -z-10 bg-accent mask-radial-from-60% mask-radial-to-100% mask-b-from-55%"
+    >
+      <StripedPattern direction="left" width={6} height={6} className="text-primary/30" />
+      <StripedPattern direction="right" width={6} height={6} className="text-gold-500/45" />
+      <div className="absolute inset-0 z-10 bg-linear-120 from-transparent via-background/60 to-transparent" />
     </div>
   );
 }
@@ -47,7 +64,10 @@ export function AuthCard({
   children: ReactNode;
 }) {
   return (
-    <Card className="w-full max-w-md bg-card/90 shadow-xl shadow-foreground/5 backdrop-blur-sm sm:[--card-spacing:--spacing(8)]">
+    // Solid, not frosted: a weave seen through glass reads as noise behind the
+    // form. The entrance is CSS (tw-animate), so it plays before JavaScript
+    // loads and never holds the form back.
+    <Card className="w-full max-w-md shadow-xl shadow-primary/10animate-in fade-in-0 slide-in-from-bottom-3 duration-500 ease-out motion-reduce:animate-none sm:[--card-spacing:--spacing(8)]">
       <CardHeader className="text-center">
         <CardTitle className="font-display text-3xl">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
