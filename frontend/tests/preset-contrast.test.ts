@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { blend, oklchToHex, parseOklch } from "@/lib/design/oklch";
-import { WCAG, contrastRatio, semantic } from "@/lib/design/tokens";
+import { WCAG, contrastRatio, gold, semantic } from "@/lib/design/tokens";
 
 const css = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
 
@@ -66,6 +66,11 @@ describe("text pairs the storefront renders clear AA body text (4.5:1)", () => {
     expect(contrastRatio(paint(dark, fg), paint(dark, bg))).toBeGreaterThanOrEqual(
       WCAG.AA_BODY,
     );
+  });
+
+  it("dark: the footer's gold headings and icons (gold-400) on background and muted", () => {
+    expect(contrastRatio(gold[400], paint(dark, "background"))).toBeGreaterThanOrEqual(WCAG.AA_BODY);
+    expect(contrastRatio(gold[400], paint(dark, "muted"))).toBeGreaterThanOrEqual(WCAG.AA_NON_TEXT);
   });
 });
 

@@ -34,7 +34,7 @@ export function OccasionTiles() {
               <Link
                 href={occasion.href}
                 className={cn(
-                  "group flex aspect-[3/4] flex-col justify-between rounded-2xl p-5 transition-transform duration-500 ease-luxury hover:-translate-y-1",
+                  "group flex aspect-[3/4] flex-col justify-between rounded-2xl p-5 transition-[translate,box-shadow] duration-500 ease-luxury hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/15",
                   TONES[occasion.tone],
                 )}
               >

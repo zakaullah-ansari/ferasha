@@ -31,6 +31,12 @@ describe("security headers", () => {
     },
   );
 
+  it("names only features browsers still recognise (no console warning)", () => {
+    const policy = asMap(true)["Permissions-Policy"];
+    expect(policy).toBe("camera=(), microphone=(), geolocation=()");
+    expect(policy).not.toMatch(/browsing-topics|interest-cohort/);
+  });
+
   it("applies to every path", async () => {
     const rules = await nextConfig.headers!();
     expect(rules).toHaveLength(1);

@@ -2,16 +2,18 @@ import Link from "next/link";
 
 import { HeaderActions } from "@/components/HeaderActions";
 import { Marquee } from "@/components/ui/marquee";
-import { ANNOUNCEMENTS, PRIMARY_NAV } from "@/lib/navigation";
+import { ANNOUNCEMENTS } from "@/lib/navigation";
 
 import { MobileNav } from "./MobileNav";
+import { PrimaryNavLinks } from "./PrimaryNavLinks";
 import { ScrollAwareHeader } from "./ScrollAwareHeader";
 import { SearchDialog } from "./SearchDialog";
 
 /**
- * Announcement strip + sticky header (it steps aside while reading down a
- * page, see ScrollAwareHeader): categories left, wordmark centred,
- * account and bag right. The strip scrolls slowly, pauses on hover (moving
+ * Announcement strip + a floating pill header after Housiq's (it steps aside
+ * while reading down a page, see ScrollAwareHeader): categories left,
+ * wordmark centred, account and bag right. The pill is frosted, so the page
+ * shows faintly through it and around it. The strip scrolls slowly, pauses on hover (moving
  * text must be pausable) and stops under reduce-motion via the global rule.
  */
 export function SiteHeader() {
@@ -26,22 +28,14 @@ export function SiteHeader() {
           ))}
         </Marquee>
       </div>
-      <ScrollAwareHeader className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
+      <ScrollAwareHeader className="sticky top-0 z-30 h-header px-3 py-3 sm:px-4">
         <nav
           aria-label="Primary"
-          className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-5 py-3"
+          className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] h-full items-center rounded-full border border-primary/10 bg-background/90 pr-2 pl-3 shadow-lg shadow-primary/5 backdrop-blur-xl sm:pl-6"
         >
           <div className="flex items-center">
             <MobileNav />
-            <ul className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-              {PRIMARY_NAV.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="transition-colors duration-300 hover:text-foreground">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <PrimaryNavLinks />
           </div>
           <Link href="/" className="font-display text-3xl tracking-tight text-foreground">
             Ferasha

@@ -33,7 +33,9 @@ export function securityHeaders({ production }: { production: boolean }): Header
     { key: "X-Content-Type-Options", value: "nosniff" },
     // Full URLs (reset and confirmation tokens) never leave the site.
     { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-    { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+    // Only features browsers still recognise: an unknown name (browsing-topics,
+    // interest-cohort, both retired) just logs a console warning.
+    { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
     // Isolates the window from pages it opens; popups (payment) still work.
     { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
     ...(production

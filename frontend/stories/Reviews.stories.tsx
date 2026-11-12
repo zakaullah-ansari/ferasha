@@ -52,15 +52,15 @@ const REVIEWS: Review[] = [
 ];
 
 const signedIn = (extra: Parameters<typeof mockFetch>[0] = []) =>
-  mockFetch([{ path: "/api/v1/auth/me/", body: CUSTOMER }, ...extra]);
+  mockFetch([{ path: "/api/session/me", body: { user: CUSTOMER } }, ...extra]);
 
 export const WithReviews: Story = {
-  beforeEach: () => mockFetch([{ path: "/api/v1/auth/me/", status: 401, body: {} }]),
+  beforeEach: () => mockFetch([{ path: "/api/session/me", body: { user: null } }]),
   render: () => <ProductReviews productId={PRODUCT.id} productSlug={PRODUCT.slug} summary={SUMMARY} reviews={REVIEWS} />,
 };
 
 export const NoReviewsYet: Story = {
-  beforeEach: () => mockFetch([{ path: "/api/v1/auth/me/", status: 401, body: {} }]),
+  beforeEach: () => mockFetch([{ path: "/api/session/me", body: { user: null } }]),
   render: () => (
     <ProductReviews
       productId={PRODUCT.id}

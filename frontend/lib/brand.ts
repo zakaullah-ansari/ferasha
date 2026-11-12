@@ -13,4 +13,9 @@ export const ATELIER = {
   phoneHref: "tel:+919819995222",
 } as const;
 
+/** Directions to the atelier: a Maps search for its published address. */
+export const ATELIER_MAPS_HREF = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  `${ATELIER.name}, ${ATELIER.addressLines.join(" ")}`,
+)}`;
+
 export const TAGLINE = "Discover your ethnic wardrobe";

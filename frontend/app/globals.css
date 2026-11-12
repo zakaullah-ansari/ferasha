@@ -77,6 +77,11 @@
   --duration-fast: 160ms;
   --duration-base: 240ms;
   --duration-slow: 320ms;
+
+  /* The floating header's full height: a h-14 pill with py-3 around it.
+     Sections that run behind the header (the account screens' forest) pull
+     up by exactly this (-mt-header pt-header). */
+  --spacing-header: 5rem;
 }
 
 @layer base {
@@ -279,4 +284,13 @@
   --sidebar-accent-foreground: oklch(0.982 0.008 160);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.62 0.06 158);
+}
+/*---break---
+ */
+/* Magic UI animated-theme-toggler: the theme switch is a circle drawn out
+   from the toggle (View Transitions), so the browser's own cross-fade is off. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }

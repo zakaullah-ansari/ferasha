@@ -18,13 +18,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const ME = "/api/v1/auth/me/";
+const ME = "/api/session/me";
 
 function scenario(signedIn: boolean, items: typeof BAG) {
   return () => {
     useCartStore.setState({ items, isOpen: false });
     const restore = mockFetch([
-      signedIn ? { path: ME, body: CUSTOMER } : { path: ME, status: 401, body: { detail: "Not signed in" } },
+      { path: ME, body: { user: signedIn ? CUSTOMER : null } },
     ]);
     return () => {
       restore();

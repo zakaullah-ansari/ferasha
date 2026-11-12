@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { ProductCard } from "@/components/ProductCard";
@@ -39,8 +40,9 @@ export function ProductRail({ eyebrow, title, products, href, hrefLabel = "View 
             {title}
           </h2>
         </div>
-        <Link href={href} className="shrink-0 text-sm text-primary underline-offset-4 hover:underline">
+        <Link href={href} className="group/link inline-flex shrink-0 items-center gap-1 text-sm text-primary underline-offset-4 hover:underline">
           {hrefLabel}
+          <ArrowRight aria-hidden="true" className="size-4 transition-transform duration-300 group-hover/link:translate-x-1" />
         </Link>
       </BlurFade>
       <Carousel opts={{ align: "start" }} className="mt-10" aria-label={title}>

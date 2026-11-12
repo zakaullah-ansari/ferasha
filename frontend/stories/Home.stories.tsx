@@ -30,7 +30,7 @@ const EDIT: ProductSummary[] = [
   "Banarasi Bridal Lehenga - Crimson",
 ].map((name, index) => ({ ...PRODUCT, id: `edit-${index}`, slug: `edit-${index}`, name }));
 
-const guest = () => mockFetch([{ path: "/api/v1/auth/me/", status: 401, body: {} }]);
+const guest = () => mockFetch([{ path: "/api/session/me", body: { user: null } }]);
 
 export const Header: Story = { beforeEach: guest, render: () => <SiteHeader /> };
 export const HeroSection: Story = { render: () => <Hero /> };

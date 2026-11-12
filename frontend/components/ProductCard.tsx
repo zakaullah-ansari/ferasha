@@ -23,7 +23,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         {/* Light grey ground so embellished garments and cutouts pop — the
             Nike/COS treatment, and the correct choice for zardozi and gota
             which are always shot on light. */}
-        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted transition-shadow duration-500 ease-luxury group-hover:shadow-xl group-hover:shadow-primary/10">
           {product.primary_image ? (
             <>
               {/* The link's text names the piece, so the photos are decorative here. */}

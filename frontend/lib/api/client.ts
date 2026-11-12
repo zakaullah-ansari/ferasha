@@ -147,6 +147,9 @@ async function send<T>(path: string, options: SendOptions = {}, retried = false)
     : ((await response.json()) as T);
 }
 
+/** The session check already on its way, shared by everyone who asks meanwhile. */
+let inFlightMe: Promise<SessionUser | null> | null = null;
+
 export const api = {
   listProducts(params: QueryParams = {}, options?: RequestOptions): Promise<Paginated<ProductSummary>> {
     return get<Paginated<ProductSummary>>(`/api/v1/catalog/products/${toQuery(params)}`, options);
@@ -194,14 +197,18 @@ export const api = {
   // Session calls pass retried=true: a 401 from a wrong password is final, and
   // retrying would spend the login rate limit twice.
   session: {
-    /** The signed-in customer, or null for a guest. */
-    async me(): Promise<SessionUser | null> {
-      try {
-        return await send<SessionUser>("/api/v1/auth/me/", {}, true);
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 401) return null;
-        throw error;
-      }
+    /**
+     * The signed-in customer, or null for a guest. A guest is answered by the
+     * storefront without asking Django (no 401). Callers asking at the same
+     * moment (header, review form) share one request.
+     */
+    me(): Promise<SessionUser | null> {
+      inFlightMe ??= send<{ user: SessionUser | null }>("/api/session/me", {}, true)
+        .then((body) => body.user)
+        .finally(() => {
+          inFlightMe = null;
+        });
+      return inFlightMe;
     },
     signIn(credentials: { email: string; password: string; remember?: boolean }): Promise<{ user: SessionUser }> {
       return send("/api/session/login", { method: "POST", body: credentials }, true);
